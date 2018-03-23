@@ -7,7 +7,7 @@ Depends: R (>= 3.4.2)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Imports: Shiny,
+Imports: shiny,
          miniUI,
          dplyr,
          RSiteCatalyst,

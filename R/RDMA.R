@@ -10,6 +10,7 @@ library(miniUI)
 library(dplyr)
 
 # omniture tap package
+library(RAdwords)
 library(RSiteCatalyst)
 library(WriteXLS)
 library(RCurl)
