@@ -2,7 +2,7 @@
 
 
 export(RDMA)
-import(Shiny)
+import(shiny)
 import(miniUI)
 import(dplyr)
 import(RSiteCatalyst)
