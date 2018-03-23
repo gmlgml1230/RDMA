@@ -1,5 +1,5 @@
 Package: RDMA
-Title: What the Package Does (one line, title case)
+Title: Easy to use Adwords Package and Omniture Package in R
 Version: 0.0.0.9000
 Authors@R: person("HeeSoo", "Jang", email = "gmlgml1230@naver.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
@@ -7,8 +7,9 @@ Depends: R (>= 3.4.2)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-Imports: Shiny,
-         miniUI,
+Imports: Shiny(>= 0.13),
+         miniUI(>= 0.1.1),
          dplyr,
          RSiteCatalyst,
-         WriteXLS
+         WriteXLS,
+         RAdwords
