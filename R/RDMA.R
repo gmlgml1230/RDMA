@@ -5,19 +5,19 @@
 
 # rm(list=ls())
 
-library(shiny)
-library(miniUI)
-library(dplyr)
+# library(shiny)
+# library(miniUI)
+# library(dplyr)
 
 # omniture tap package
-library(RAdwords)
-library(RSiteCatalyst)
-library(WriteXLS)
-library(RCurl)
-library(rjson)
+# library(RAdwords)
+# library(RSiteCatalyst)
+# library(WriteXLS)
+# library(RCurl)
+# library(rjson)
 
-source("~/RDMA/R/getAuth.R")
-source("~/RDMA/R/loadToken.R")
+# source("~/RDMA/R/getAuth.R")
+# source("~/RDMA/R/loadToken.R")
 
 
 if(file.exists(".google.auth.RData")){
