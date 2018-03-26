@@ -1,5 +1,6 @@
 # RDMA
 
-options(devtools.install.args = "--no-multiarch") 
 
-install_github("gmlgml1230/RDMA")
+devtools::install_github("gmlgml1230/RDMA")
+
+파일 저장 : [FileName].csv
