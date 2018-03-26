@@ -103,7 +103,6 @@ RDMA <- function(){
                      ),
                      fluidRow(
                        actionButton("start", "Omniture Start"),
-                       actionButton("stop", "Stop"),
                        downloadButton(outputId = "omdownloaddata")
                      )
                    )
