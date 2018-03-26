@@ -1,6 +1,7 @@
 #' get RDMA
-#' #' @importFrom rjson fromJSON
-#' 
+#' @export
+#' @importFrom rjson fromJSON
+
 
 loadToken = function(credlist) {
   opts = list(verbose=T, ssl.verifypeer = FALSE)

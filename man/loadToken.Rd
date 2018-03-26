@@ -2,12 +2,10 @@
 % Please edit documentation in R/loadtoken.R
 \name{loadToken}
 \alias{loadToken}
-\title{get RDMA
-#' @importFrom rjson fromJSON}
+\title{get RDMA}
 \usage{
 loadToken(credlist)
 }
 \description{
 get RDMA
-#' @importFrom rjson fromJSON
 }

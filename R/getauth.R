@@ -1,8 +1,9 @@
 #' get RDMA
+#' @export
 #' @importFrom RCurl getURL
 
 
-getAuth = function(clientid, clientsecret, developertoken) {
+getauth = function(clientid, clientsecret, developertoken) {
   if(!exists('credentials')){
     c.id <- clientid
     if(c.id == ""){
