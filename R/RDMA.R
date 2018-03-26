@@ -137,8 +137,7 @@ RDMA <- function(){
                      ),
                      fluidRow(
                        actionButton(inputId = "Ad_get_data", label = "Adwords Start"),
-                       downloadButton(outputId = "addownloaddata"),
-                       verbatimTextOutput("test")
+                       downloadButton(outputId = "addownloaddata")
                      )
                    ))
     )
@@ -149,6 +148,8 @@ RDMA <- function(){
   server <- function(input, output, session) {
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
+
+    omni_data.df <- reactiveValues()
 
     observeEvent(input$omlogin, {
       RSiteCatalyst::SCAuth(isolate({input$loginid}), isolate({input$loginpass}))
@@ -176,12 +177,21 @@ RDMA <- function(){
                               segment.id = isolate({input$segmentname}),
                               enqueueOnly = FALSE,
                               max.attempts = 1000) %>% do.call(., what = rbind)
+
+      print(paste0("옴니츄어 추출 완료", Sys.time()))
     })
 
-    output$omdownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_omni_data.xlsx")},
-                                             content = function(file){WriteXLS(data, file, row.names = TRUE)})
+    # output$omdownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_omni_data.xlsx")},
+    #                                          content = function(file){WriteXLS(data, file, row.names = TRUE)})
+    output$omdownloaddata <- downloadHandler(filename = paste0(Sys.Date(), "_omni_data.xlsx"),
+                                             content = function(file){
+                                               write.table(omni_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
+                                             })
 
     ##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
+
+    credentials <- reactiveValues()
+    Ad_data.df <- reactiveValues()
 
     auth_page <- function(){
       modalDialog(
@@ -200,11 +210,6 @@ RDMA <- function(){
     }
 
     observeEvent(input$Refresh, {if(Ad_auth == "NO"){showModal(auth_page())} else {}})
-
-    credentials <- reactiveValues()
-    Ad_data.df <- reactiveValues()
-    # google_auth <- reactiveValues()
-    # access_token <- reactiveValues()
 
     observeEvent(input$authok, {
       removeModal()
@@ -248,7 +253,6 @@ RDMA <- function(){
                                        google_auth = google_auth,
                                        statement = body)
       print(paste0("애드워즈 추출 완료", Sys.time()))
-      output$test <- renderText(getwd())
     })
 
     # output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
