@@ -2,7 +2,7 @@
 
 export(RDMA)
 export(getauth)
-export(loadToken)
+export(loadtoken)
 import(RAdwords)
 import(RSiteCatalyst)
 import(WriteXLS)
