@@ -25,15 +25,18 @@
 # source("~/RDMA/R/loadToken.R")
 
 
-if(file.exists(".google.auth.RData")){
-  Ad_auth <- "OK"
-  load(".google.auth.RData")
-} else {
-  Ad_auth <- "NO"
-}
+
 
 
 RDMA <- function(){
+
+
+  if(file.exists(".google.auth.RData")){
+    Ad_auth <- "OK"
+    load(".google.auth.RData")
+  } else {
+    Ad_auth <- "NO"
+  }
 
   # dplyr package Check
   if(!isNamespaceLoaded("dplyr")){attachNamespace("dplyr")}
