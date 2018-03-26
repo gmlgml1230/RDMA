@@ -1,23 +1,25 @@
-# 개발자 토큰이 google_auth 에 들어가지 않고 있음
+# Credentials 전역변수 처리 부분 수정
+# goolge_auth.list 전역변수 처리 부분 수정
+
 
 
 
 
 # rm(list=ls())
 
-# library(shiny)
-# library(miniUI)
-# library(dplyr)
+library(shiny)
+library(miniUI)
+library(dplyr)
 
-# omniture tap package
-# library(RAdwords)
-# library(RSiteCatalyst)
-# library(WriteXLS)
-# library(RCurl)
-# library(rjson)
+omniture tap package
+library(RAdwords)
+library(RSiteCatalyst)
+library(WriteXLS)
+library(RCurl)
+library(rjson)
 
-# source("~/RDMA/R/getAuth.R")
-# source("~/RDMA/R/loadToken.R")
+source("~/RDMA/R/getAuth.R")
+source("~/RDMA/R/loadToken.R")
 
 
 if(file.exists(".google.auth.RData")){
@@ -44,14 +46,14 @@ RDMA <- function(){
     # }
   }
 
-##### UI -----------------------------------------------------------------------------------------------------------------------------
+  ##### UI -----------------------------------------------------------------------------------------------------------------------------
 
   ui <- miniPage(
     gadgetTitleBar("Artience Data Preparation Tool"),
 
     miniTabstripPanel(
 
-##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
+      ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
       miniTabPanel(title = "Data Preparation",
                    miniContentPanel(
@@ -64,11 +66,11 @@ RDMA <- function(){
                    )
       ),
 
-##### Data Merge TAP -----------------------------------------------------------------------------------------------------------------
+      ##### Data Merge TAP -----------------------------------------------------------------------------------------------------------------
 
       miniTabPanel(title = "Data Merge"),
 
-##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
+      ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
       miniTabPanel(title = "Omniture",
                    miniContentPanel(
@@ -101,7 +103,7 @@ RDMA <- function(){
                    )
       ),
 
-##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
+      ##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
 
       miniTabPanel(title = "Adwords",
                    miniContentPanel(
@@ -135,11 +137,11 @@ RDMA <- function(){
     )
   )
 
-##### SERVER -------------------------------------------------------------------------------------------------------------------------
+  ##### SERVER -------------------------------------------------------------------------------------------------------------------------
 
   server <- function(input, output, session) {
 
-##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
+    ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
     observeEvent(input$omlogin, {
       RSiteCatalyst::SCAuth(isolate({input$loginid}), isolate({input$loginpass}))
@@ -170,9 +172,9 @@ RDMA <- function(){
     })
 
     output$omdownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_omni_data.xlsx")},
-                                           content = function(file){WriteXLS(data, file, row.names = TRUE)})
+                                             content = function(file){WriteXLS(data, file, row.names = TRUE)})
 
-##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
+    ##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
 
     auth_page <- function(){
       modalDialog(
@@ -230,7 +232,7 @@ RDMA <- function(){
                   report = input$reportname,
                   start = input$adstartdate[1],
                   end = input$adstartdate[2])
-        })
+      })
 
       Ad_data.df <<- RAdwords::getData(clientCustomerId = isolate({as.character(input$clientcustomerId)}),
                                        google_auth = google_auth,
@@ -238,7 +240,7 @@ RDMA <- function(){
     })
 
     output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
-                                             content = function(file){WriteXLS(data, file, row.names = TRUE)})
+                                             content = function(file){WriteXLS(Ad_data.df, file, row.names = TRUE)})
 
 
 
