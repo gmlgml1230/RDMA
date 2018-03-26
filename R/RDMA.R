@@ -1,25 +1,22 @@
-# Credentials 전역변수 처리 부분 수정
-# goolge_auth.list 전역변수 처리 부분 수정
-
-
+# 수정 완료 후 Github Upload 시 library & source 부분 주석처리 하기
 
 
 
 # rm(list=ls())
 
-library(shiny)
-library(miniUI)
-library(dplyr)
+# library(shiny)
+# library(miniUI)
+# library(dplyr)
 
-omniture tap package
-library(RAdwords)
-library(RSiteCatalyst)
-library(WriteXLS)
-library(RCurl)
-library(rjson)
-
-source("~/RDMA/R/getAuth.R")
-source("~/RDMA/R/loadToken.R")
+# omniture tap package
+# library(RAdwords)
+# library(RSiteCatalyst)
+# library(WriteXLS)
+# library(RCurl)
+# library(rjson)
+#
+# source("~/RDMA/R/getAuth.R")
+# source("~/RDMA/R/loadToken.R")
 
 
 if(file.exists(".google.auth.RData")){
@@ -194,9 +191,15 @@ RDMA <- function(){
 
     observeEvent(input$Refresh, {if(Ad_auth == "NO"){showModal(auth_page())} else {}})
 
+    credentials <- reactiveValues()
+    Ad_data.df <- reactiveValues()
+    # google_auth <- reactiveValues()
+    # access_token <- reactiveValues()
+
     observeEvent(input$authok, {
       removeModal()
-      credentials <<- getAuth(isolate({input$clientid}), isolate({input$clientsecret}), isolate({input$developertoken}))
+      credentials <- isolate({getAuth(input$clientid, input$clientsecret, input$developertoken)})
+      credentials <<- credentials
       showModal(clientToken_page())
     })
 
@@ -205,19 +208,15 @@ RDMA <- function(){
       removeModal()
       access_token <- loadToken(credentials)
       google_auth <<- list()
-      google_auth$credentials <- credentials
-      google_auth$access <- access_token
+      google_auth$credentials <<- credentials
+      google_auth$access <<- access_token
 
       if(TRUE){
         save("google_auth",file=".google.auth.RData")
         updateActionButton(session, inputId = "Refresh", label = "인증서 : OK")
-        if (!file.exists(".gitignore")){
-          cat(".google.auth.RData",file=".gitignore",sep="\n")
-        }
-        if (file.exists(".gitignore")){
-          cat(".google.auth.RData",file=".gitignore",append=TRUE)
-        }
-        load(".google.auth.RData")
+        if (!file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",sep="\n")}
+        if (file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",append=TRUE)}
+
       }
 
     })
@@ -237,6 +236,7 @@ RDMA <- function(){
       Ad_data.df <<- RAdwords::getData(clientCustomerId = isolate({as.character(input$clientcustomerId)}),
                                        google_auth = google_auth,
                                        statement = body)
+      paste0("애드워즈 추출 완료", print(Sys.time()))
     })
 
     output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
