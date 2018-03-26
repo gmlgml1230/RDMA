@@ -3,7 +3,7 @@
 #' @importFrom rjson fromJSON
 
 
-loadToken = function(credlist) {
+loadtoken = function(credlist) {
   opts = list(verbose=T, ssl.verifypeer = FALSE)
   a = rjson::fromJSON(RCurl::postForm("https://accounts.google.com/o/oauth2/token",
                                       .opts=opts, code=credlist$c.token,
