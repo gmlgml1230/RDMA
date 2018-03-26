@@ -134,7 +134,8 @@ RDMA <- function(){
                      ),
                      fluidRow(
                        actionButton(inputId = "Ad_get_data", label = "Adwords Start"),
-                       downloadButton(outputId = "addownloaddata")
+                       downloadButton(outputId = "addownloaddata"),
+                       verbatimTextOutput("test")
                      )
                    ))
     )
@@ -242,7 +243,8 @@ RDMA <- function(){
       Ad_data.df <<- RAdwords::getData(clientCustomerId = isolate({as.character(input$clientcustomerId)}),
                                        google_auth = google_auth,
                                        statement = body)
-      paste0("애드워즈 추출 완료", print(Sys.time()))
+      print(paste0("애드워즈 추출 완료", Sys.time()))
+      output$test <- renderText(getwd())
     })
 
     output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
