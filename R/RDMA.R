@@ -198,7 +198,7 @@ RDMA <- function(){
 
     observeEvent(input$authok, {
       removeModal()
-      credentials <- isolate({getAuth(input$clientid, input$clientsecret, input$developertoken)})
+      credentials <- isolate({getauth(input$clientid, input$clientsecret, input$developertoken)})
       credentials <<- credentials
       showModal(clientToken_page())
     })
@@ -206,7 +206,7 @@ RDMA <- function(){
     observeEvent(input$ok, {
       credentials$c.token <- as.character(isolate({input$clienttoken}))
       removeModal()
-      access_token <- loadToken(credentials)
+      access_token <- loadtoken(credentials)
       google_auth <<- list()
       google_auth$credentials <<- credentials
       google_auth$access <<- access_token
