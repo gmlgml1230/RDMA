@@ -1,5 +1,11 @@
-# 수정 완료 후 Github Upload 시 library & source 부분 주석처리 하기
-
+#' RDMA
+#' @export
+#' @import shiny
+#' @import miniUI
+#' @import dplyr
+#' @import RAdwords
+#' @import RSiteCatalyst
+#' @import WriteXLS
 
 
 # rm(list=ls())
@@ -248,8 +254,8 @@ RDMA <- function(){
   }
 
   viewer <- dialogViewer("RDMA", width = 1000, height = 800)
-  runGadget(ui, server, viewer = viewer)
+  shiny::runGadget(ui, server, viewer = viewer)
 
 }
 
-RDMA()
+# RDMA()
