@@ -24,6 +24,7 @@
 # source("~/RDMA/R/getAuth.R")
 # source("~/RDMA/R/loadToken.R")
 
+setwd(getwd())
 
 if(file.exists(".google.auth.RData")){
   Ad_auth <- "OK"
