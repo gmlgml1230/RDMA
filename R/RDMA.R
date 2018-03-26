@@ -238,6 +238,7 @@ RDMA <- function(){
                   report = input$reportname,
                   start = input$adstartdate[1],
                   end = input$adstartdate[2])
+
       })
 
       Ad_data.df <<- RAdwords::getData(clientCustomerId = isolate({as.character(input$clientcustomerId)}),
@@ -247,8 +248,12 @@ RDMA <- function(){
       output$test <- renderText(getwd())
     })
 
-    output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
-                                             content = function(file){WriteXLS(Ad_data.df, file, row.names = TRUE)})
+    # output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
+    #                                          content = function(file){WriteXLS(Ad_data.df, file, row.names = TRUE)})
+    output$addownloaddata <- downloadHandler(filename = paste0(Sys.Date(), "_adwords_data.xlsx"),
+                                             content = function(file){
+                                               write.table(Ad_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
+                                             })
 
 
 
