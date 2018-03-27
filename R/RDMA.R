@@ -61,20 +61,20 @@ RDMA <- function(){
 
       ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
-      miniTabPanel(title = "Data Preparation",
-                   miniContentPanel(
-                     fluidRow(
-                       selectInput(inputId = "dataframe1", label = "Data Frame", choices = df_val, selected = "", size = 9, selectize = FALSE)
-                     ),
-                     fluidRow(
-                       selectInput(inputId = "selectdata", label = "Select Data", choices = "", selectize = FALSE, size = 4)
-                     )
-                   )
-      ),
+      # miniTabPanel(title = "Data Preparation",
+      #              miniContentPanel(
+      #                fluidRow(
+      #                  selectInput(inputId = "dataframe1", label = "Data Frame", choices = df_val, selected = "", size = 9, selectize = FALSE)
+      #                ),
+      #                fluidRow(
+      #                  selectInput(inputId = "selectdata", label = "Select Data", choices = "", selectize = FALSE, size = 4)
+      #                )
+      #              )
+      # ),
 
       ##### Data Merge TAP -----------------------------------------------------------------------------------------------------------------
 
-      miniTabPanel(title = "Data Merge"),
+      # miniTabPanel(title = "Data Merge"),
 
       ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
@@ -83,10 +83,11 @@ RDMA <- function(){
                      fluidRow(
                        column(6,
                               actionButton(inputId = "omlogin", label = "Login"),
-                              actionButton(inputId = "om_update", label = "갱 신"))
+                              actionButton(inputId = "om_update", label = "Update"))
                      ),
                      fluidRow(
-                       dateRangeInput(inputId = "omstartdate", label = "Date Range :", start = Sys.Date() -7, end = Sys.Date())
+                       column(3,
+                              dateRangeInput(inputId = "omstartdate", label = "Date Range :", start = Sys.Date() -7, end = Sys.Date()))
                      ),
                      fluidRow(
                        column(3,
@@ -99,8 +100,9 @@ RDMA <- function(){
                               selectInput(inputId = "segmentname", label = "Segment Name", choices = "", multiple = T))
                      ),
                      fluidRow(
-                       actionButton("start", "Omniture Start"),
-                       downloadButton(outputId = "omdownloaddata")
+                       column(3,
+                              actionButton("start", "Omniture Start"),
+                              downloadButton(outputId = "om_data.csv"))
                      )
                    )
       ),
@@ -123,17 +125,16 @@ RDMA <- function(){
                      ),
                      fluidRow(
                        column(4,
-                              selectInput(inputId = "Ad_metricname", label = "Metric Name", choices = "", multiple = T)),
-                       column(4,
-                              actionButton(inputId = "adenter", label = "Enter"))
+                              selectInput(inputId = "Ad_metricname", label = "Metric Name", choices = "", multiple = T))
                      ),
                      fluidRow(
                        column(4,
                               textInput(inputId = "clientcustomerId", label = "Client Customer Id"))
                      ),
                      fluidRow(
-                       actionButton(inputId = "Ad_get_data", label = "Adwords Start"),
-                       downloadButton(outputId = "addownloaddata")
+                       column(4,
+                              actionButton(inputId = "Ad_get_data", label = "Adwords Start"),
+                              downloadButton(outputId = "ad_data.csv"))
                      )
                    ))
     )
@@ -248,7 +249,7 @@ RDMA <- function(){
 
     # output$omdownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_omni_data.xlsx")},
     #                                          content = function(file){WriteXLS(data, file, row.names = TRUE)})
-    output$omdownloaddata <- downloadHandler(filename = paste0(Sys.Date(), "_omni_data.xlsx"),
+    output$om_data.csv <- downloadHandler(filename = paste0(Sys.Date(), "_omni_data.xlsx"),
                                              content = function(file){
                                                write.table(omni_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
                                              })
@@ -257,6 +258,8 @@ RDMA <- function(){
 
     credentials <- reactiveValues()
     Ad_data.df <- reactiveValues()
+    Adwords_info <- reactiveValues()
+
 
     auth_page <- function(){
       modalDialog(
@@ -278,8 +281,13 @@ RDMA <- function(){
 
     observeEvent(input$authok, {
       removeModal()
-      credentials <- isolate({getauth(input$clientid, input$clientsecret, input$developertoken)})
-      credentials <<- credentials
+      isolate({
+        credentials <- getauth(input$clientid, input$clientsecret, input$developertoken)
+        credentials <<- credentials
+        Adwords_info <<- list("clientid" = input$clientid,
+                             "clientsecret" = input$clientsecret,
+                             "developertoken" = input$developertoken)
+      })
       showModal(clientToken_page())
     })
 
@@ -290,20 +298,22 @@ RDMA <- function(){
       google_auth <<- list()
       google_auth$credentials <<- credentials
       google_auth$access <<- access_token
+      google_auth$Adwords_info <<- Adwords_info
 
       if(TRUE){
         save("google_auth",file=".google.auth.RData")
         updateActionButton(session, inputId = "Refresh", label = "인증서 : OK")
         if (!file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",sep="\n")}
         if (file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",append=TRUE)}
-
       }
-
     })
 
-    observeEvent(input$adenter, {
-      updateSelectInput(session, "Ad_metricname", choices = RAdwords::metrics(as.character(isolate({input$reportname}))))
-    })
+    observe(
+      updateSelectInput(session, "Ad_metricname", choices = RAdwords::metrics(as.character(input$reportname)))
+    )
+    # observeEvent(input$adenter, {
+    #   updateSelectInput(session, "Ad_metricname", choices = RAdwords::metrics(as.character(isolate({input$reportname}))))
+    # })
 
     observeEvent(input$Ad_get_data, {
       body <- isolate({
@@ -311,18 +321,17 @@ RDMA <- function(){
                   report = input$reportname,
                   start = input$adstartdate[1],
                   end = input$adstartdate[2])
-
       })
 
       Ad_data.df <<- RAdwords::getData(clientCustomerId = isolate({as.character(input$clientcustomerId)}),
                                        google_auth = google_auth,
                                        statement = body)
-      print(paste0("애드워즈 추출 완료", Sys.time()))
+      showModal(text_page("애드워즈 추출 완료"))
     })
 
     # output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
     #                                          content = function(file){WriteXLS(Ad_data.df, file, row.names = TRUE)})
-    output$addownloaddata <- downloadHandler(filename = paste0(Sys.Date(), "_adwords_data.xlsx"),
+    output$ad_data.csv <- downloadHandler(filename = paste0(Sys.Date(), "_adwords_data.xlsx"),
                                              content = function(file){
                                                write.table(Ad_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
                                              })
@@ -332,7 +341,7 @@ RDMA <- function(){
 
   }
 
-  viewer <- dialogViewer("RDMA", width = 1000, height = 800)
+  viewer <- dialogViewer("RDMA", width = 600, height = 600)
   shiny::runGadget(ui, server, viewer = viewer)
 
 }
