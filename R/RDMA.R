@@ -82,18 +82,15 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(6,
-                              textInput(inputId = "loginid", label = "ID")),
-                       column(6,
-                              textInput(inputId = "loginpass", label = "Pass Word"),
-                              actionButton(inputId = "omlogin", label = "Login"))
+                              actionButton(inputId = "omlogin", label = "Login"),
+                              actionButton(inputId = "om_update", label = "갱 신"))
                      ),
                      fluidRow(
                        dateRangeInput(inputId = "omstartdate", label = "Date Range :", start = Sys.Date() -7, end = Sys.Date())
                      ),
                      fluidRow(
                        column(3,
-                              selectInput(inputId = "countryname", label = "Country Name", choices = "", multiple = T),
-                              actionButton(inputId = "omenter", label = "Enter")),
+                              selectInput(inputId = "countryname", label = "Country Name", choices = "", multiple = T)),
                        column(3,
                               selectInput(inputId = "metricname", label = "Metric Name", choices = "", multiple = T)),
                        column(3,
@@ -146,38 +143,107 @@ RDMA <- function(){
 
   server <- function(input, output, session) {
 
+    text_page <- function(text){
+      modalDialog(
+        text,
+        footer = tagList(
+          modalButton("Cancel")
+        )
+      )
+    }
+
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
     omni_data.df <- reactiveValues()
+    om_id <- reactiveValues()
+    om_pw <- reactiveValues()
 
-    observeEvent(input$omlogin, {
-      RSiteCatalyst::SCAuth(isolate({input$loginid}), isolate({input$loginpass}))
-      updateSelectInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
+    if(file.exists(".om.info.RData")){
+      load(".om.info.RData")
+      om_list <- om_info$om_list
+      updateSelectInput(session, "metricname", choices = om_list$metricname)
+      updateSelectInput(session, "elementname", choices = om_list$elementname)
+      updateSelectInput(session, "segmentname", choices = om_list$segmentname)
+    }
+
+    om_auth_page <- function(){
+      if(file.exists(".om.info.RData")){
+        load(".om.info.RData")
+        om_id <<- om_info$ID
+        om_pw <<- om_info$PW
+      } else {
+        om_id <<- ""
+        om_pw <<- ""
+      }
+      modalDialog(
+        textInput(inputId = "om_id", label = "ID", value = om_id),
+        textInput(inputId = "om_pw", label = "Pass Word", value = om_pw),
+        footer = tagList(
+          actionButton(inputId = "omauthok", label = "OK"),
+          modalButton("Cancel")
+        )
+      )
+    }
+
+    observeEvent(input$omlogin, showModal(om_auth_page()))
+
+    observeEvent(input$omauthok, {
+      removeModal()
+      isolate({
+        om_info <<- list("ID" = input$om_id, "PW" = input$om_pw)
+
+        if(file.exists(".om.info.RData") == FALSE){
+          save("om_info", file = ".om.info.RData")
+        } else {
+          if(om_id == input$om_id && om_pw == input$om_pw){
+          } else {
+            save("om_info", file = ".om.info.RData")
+          }
+        }
+
+        RSiteCatalyst::SCAuth(isolate({input$om_id}), isolate({input$om_pw}))
+        updateSelectInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
+        showModal(text_page("완료 되었습니다"))
+      })
     })
 
-    observeEvent(input$omenter, {
-      updateSelectInput(session, "metricname", choices = RSiteCatalyst::GetMetrics(isolate({input$countryname[1]}))$id)
-      updateSelectInput(session, "elementname", choices = RSiteCatalyst::GetElements(isolate({input$countryname[1]}))$id)
-      updateSelectInput(session, "segmentname", choices = RSiteCatalyst::GetSegments(isolate({input$countryname[1]}))$id)
+    observeEvent(input$om_update, {
+      isolate({
+        if(input$countryname == ""){
+          showModal(text_page("국가를 선택해주세요"))
+        } else if(file.exists(".om.info.RData") == FALSE){
+          showModal(text_page("로그인 후 사용가능 합니다"))
+        } else {
+          om_list <- list(
+            "metricname" = RSiteCatalyst::GetMetrics(isolate({input$countryname[1]}))$id,
+            "elementname" = RSiteCatalyst::GetElements(isolate({input$countryname[1]}))$id,
+            "segmentname" = RSiteCatalyst::GetSegments(isolate({input$countryname[1]}))$id)
+          om_info$om_list <- om_list
+          save("om_info", file = ".om.info.RData")
+          updateSelectInput(session, "metricname", choices = om_list$metricname)
+          updateSelectInput(session, "elementname", choices = om_list$elementname)
+          updateSelectInput(session, "segmentname", choices = om_list$segmentname)
+          showModal(text_page("완료 되었습니다"))
+        }
+      })
     })
-
 
     observeEvent(input$start, {
       if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
 
-      omni_data.df <<- lapply(X = isolate({input$countryname}),
+      omni_data.df <<- isolate({lapply(X = input$countryname,
                               FUN = QueueTrended,
-                              date.from = isolate({input$omstartdate[1]}),
-                              date.to = isolate({input$omstartdate[2]}),
-                              metrics = isolate({input$metricname}),
-                              elements = isolate({input$elementname}),
+                              date.from = input$omstartdate[1],
+                              date.to = input$omstartdate[2],
+                              metrics = input$metricname,
+                              elements = input$elementname,
                               top = 50000,
                               start = 0,
-                              segment.id = isolate({input$segmentname}),
+                              segment.id = input$segmentname,
                               enqueueOnly = FALSE,
                               max.attempts = 1000) %>% do.call(., what = rbind)
-
-      print(paste0("옴니츄어 추출 완료", Sys.time()))
+      })
+      showModal(text_page("옴니츄어 추출 완료"))
     })
 
     # output$omdownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_omni_data.xlsx")},
