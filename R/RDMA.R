@@ -215,13 +215,14 @@ RDMA <- function(){
           om_list <- list(
               "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
               "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
-              "segmentname" = RSiteCatalyst::GetSegments(input$countryname[1])[,1:2]
+              "segmentname_id" = RSiteCatalyst::GetSegments(input$countryname[1])$id,
+              "segmentname_name" = RSiteCatalyst::GetSegments(input$countryname[1])$name
           )
           om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
           updateSelectInput(session, "metricname", choices = om_list$metricname)
           updateSelectInput(session, "elementname", choices = om_list$elementname)
-          updateSelectInput(session, "segmentname", choices = om_list$segmentname$name)
+          updateSelectInput(session, "segmentname", choices = om_list$segmentname_name)
           showModal(text_page("완료 되었습니다"))
         }
       })
@@ -238,7 +239,7 @@ RDMA <- function(){
                               elements = input$elementname,
                               top = 50000,
                               start = 0,
-                              segment.id = om_info$om_list$segmentname$id[which(input$segmentname == om_info$om_list$segmentname$name)],
+                              segment.id = om_info$om_list$segmentname_id[which(input$segmentname == om_info$om_list$segmentname_name)],
                               enqueueOnly = FALSE,
                               max.attempts = 1000) %>% do.call(., what = rbind)
       })
