@@ -213,11 +213,9 @@ RDMA <- function(){
           showModal(text_page("로그인 후 사용가능 합니다"))
         } else {
           om_list <- list(
-            isolate({
               "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
               "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
               "segmentname" = RSiteCatalyst::GetSegments(input$countryname[1])[,1:2]
-            })
           )
           om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
