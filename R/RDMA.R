@@ -166,7 +166,7 @@ RDMA <- function(){
       om_pw <- om_info$PW
       updateSelectInput(session, "metricname", choices = om_info$om_list$metricname)
       updateSelectInput(session, "elementname", choices = om_info$om_list$elementname)
-      updateSelectInput(session, "segmentname", choices = om_info$om_list$segmentname$name)
+      updateSelectInput(session, "segmentname", choices = om_info$om_list$segmentname_name)
     } else {
       om_id <- ""
       om_pw <- ""
