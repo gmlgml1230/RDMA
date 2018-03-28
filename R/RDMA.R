@@ -216,7 +216,7 @@ RDMA <- function(){
             isolate({
               "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
               "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
-              "segmentname" = RSiteCatalyst::GetSegments(input$countryname[1])[,1:2])
+              "segmentname" = RSiteCatalyst::GetSegments(input$countryname[1])[,1:2]
             })
           om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
