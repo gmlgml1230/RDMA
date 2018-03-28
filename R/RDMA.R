@@ -156,26 +156,23 @@ RDMA <- function(){
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
     omni_data.df <- reactiveValues()
-    om_id <- reactiveValues()
-    om_pw <- reactiveValues()
+    # om_id <- reactiveValues()
+    # om_pw <- reactiveValues()
+
 
     if(file.exists(".om.info.RData")){
       load(".om.info.RData")
-      om_list <- om_info$om_list
-      updateSelectInput(session, "metricname", choices = om_list$metricname)
-      updateSelectInput(session, "elementname", choices = om_list$elementname)
-      updateSelectInput(session, "segmentname", choices = om_list$segmentname)
+      om_id <- om_info$ID
+      om_pw <- om_info$PW
+      updateSelectInput(session, "metricname", choices = om_info$om_list$metricname)
+      updateSelectInput(session, "elementname", choices = om_info$om_list$elementname)
+      updateSelectInput(session, "segmentname", choices = om_info$om_list$segmentname$name)
+    } else {
+      om_id <- ""
+      om_pw <- ""
     }
 
     om_auth_page <- function(){
-      if(file.exists(".om.info.RData")){
-        load(".om.info.RData")
-        om_id <<- om_info$ID
-        om_pw <<- om_info$PW
-      } else {
-        om_id <<- ""
-        om_pw <<- ""
-      }
       modalDialog(
         textInput(inputId = "om_id", label = "ID", value = om_id),
         textInput(inputId = "om_pw", label = "Pass Word", value = om_pw),
@@ -216,14 +213,16 @@ RDMA <- function(){
           showModal(text_page("로그인 후 사용가능 합니다"))
         } else {
           om_list <- list(
-            "metricname" = RSiteCatalyst::GetMetrics(isolate({input$countryname[1]}))$id,
-            "elementname" = RSiteCatalyst::GetElements(isolate({input$countryname[1]}))$id,
-            "segmentname" = RSiteCatalyst::GetSegments(isolate({input$countryname[1]}))$id)
-          om_info$om_list <- om_list
+            isolate({
+              "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
+              "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
+              "segmentname" = RSiteCatalyst::GetSegments(input$countryname[1])[,1:2])
+            })
+          om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
           updateSelectInput(session, "metricname", choices = om_list$metricname)
           updateSelectInput(session, "elementname", choices = om_list$elementname)
-          updateSelectInput(session, "segmentname", choices = om_list$segmentname)
+          updateSelectInput(session, "segmentname", choices = om_list$segmentname$name)
           showModal(text_page("완료 되었습니다"))
         }
       })
@@ -240,7 +239,7 @@ RDMA <- function(){
                               elements = input$elementname,
                               top = 50000,
                               start = 0,
-                              segment.id = input$segmentname,
+                              segment.id = om_info$om_list$segmentname$id[which(input$segmentname == om_info$om_list$segmentname$name)],
                               enqueueOnly = FALSE,
                               max.attempts = 1000) %>% do.call(., what = rbind)
       })
