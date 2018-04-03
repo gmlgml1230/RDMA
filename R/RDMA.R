@@ -10,24 +10,25 @@
 
 # rm(list=ls())
 
-# library(shiny)
-# library(miniUI)
-# library(dplyr)
+library(shiny)
+library(miniUI)
+library(dplyr)
 
 # omniture tap package
-# library(RAdwords)
-# library(RSiteCatalyst)
-# library(WriteXLS)
-# library(RCurl)
-# library(rjson)
+library(RAdwords)
+library(RSiteCatalyst)
+library(WriteXLS)
+library(RCurl)
+library(rjson)
 #
 # source("~/RDMA/R/getAuth.R")
 # source("~/RDMA/R/loadToken.R")
 
 
+shiny.maxRequestSize = 30 * 1024 ^ 2
 
 
-
+# R Data Manipulation Add-in
 RDMA <- function(){
 
 
@@ -61,16 +62,15 @@ RDMA <- function(){
 
       ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
-      # miniTabPanel(title = "Data Preparation",
-      #              miniContentPanel(
-      #                fluidRow(
-      #                  selectInput(inputId = "dataframe1", label = "Data Frame", choices = df_val, selected = "", size = 9, selectize = FALSE)
-      #                ),
-      #                fluidRow(
-      #                  selectInput(inputId = "selectdata", label = "Select Data", choices = "", selectize = FALSE, size = 4)
-      #                )
-      #              )
-      # ),
+      miniTabPanel(title = "Data Preparation",
+                   miniContentPanel(
+                     selectInput(inputId = "sheetcolname", label = "Column Name", choices = df_val, selected = "", size = 9, selectize = FALSE),
+                     selectInput(inputId = "selectdata", label = "Select Data", choices = "", selectize = FALSE, size = 4),
+                     fileInput("datafile", label = "Data File"),
+                     verbatimTextOutput("test"),
+                     selectInput(inputId = "sheetname", label = "Sheet Name", choices = "", multiple = T)
+                   )
+      ),
 
       ##### Data Merge TAP -----------------------------------------------------------------------------------------------------------------
 
@@ -143,6 +143,8 @@ RDMA <- function(){
   ##### SERVER -------------------------------------------------------------------------------------------------------------------------
 
   server <- function(input, output, session) {
+    # Shiny에서 5MB의 제한을 잡아놓은걸 30MB로 늘린 것
+    options(shiny.maxRequestSize = 30 * 1024 ^ 2)
 
     text_page <- function(text){
       modalDialog(
@@ -152,6 +154,27 @@ RDMA <- function(){
         )
       )
     }
+
+    ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
+
+    selectfile <- reactive({
+      selectfile <- input$datafile
+      if(is.null(selectfile)){
+        return(NULL)
+      }
+      return(selectfile)
+    })
+
+    observe({
+      if(is.null(selectfile())){
+      } else {
+        updateSelectInput(session, "sheetname", choices = readxl::excel_sheets(selectfile()$datapath))
+        updateSelectInput(session, "sheetcolname", choices = )
+      }
+    })
+
+    # output$test <- renderPrint({input$datafile})
+    # updateSelectInput(session, "sheetname", choices = sheetname())
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
@@ -347,4 +370,4 @@ RDMA <- function(){
 
 }
 
-# RDMA()
+RDMA()
