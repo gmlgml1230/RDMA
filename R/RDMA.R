@@ -85,25 +85,27 @@ RDMA <- function(){
                               actionButton(inputId = "omlogin", label = "Login"),
                               actionButton(inputId = "om_update", label = "Update"))
                      ),
-                     fluidRow(
-                       column(3,
-                              dateRangeInput(inputId = "omstartdate", label = "Date Range :", start = Sys.Date() -7, end = Sys.Date()))
+                     hr(),
+                     wellPanel(
+                       fluidRow(
+                         column(3,
+                                dateRangeInput(inputId = "omstartdate", label = "Date Range", start = Sys.Date() -7, end = Sys.Date()))
+                       ),
+                       fluidRow(
+                         column(3,
+                                selectInput(inputId = "countryname", label = "Country Name", choices = "", multiple = T)),
+                         column(3,
+                                selectInput(inputId = "metricname", label = "Metric Name", choices = "", multiple = T)),
+                         column(3,
+                                selectInput(inputId = "elementname", label = "Element Name", choices = "", multiple = T)),
+                         column(3,
+                                selectInput(inputId = "segmentname", label = "Segment Name", choices = "", multiple = T))
+                       ),
+                       actionButton("omstart", "Omniture Start")
                      ),
-                     fluidRow(
-                       column(3,
-                              selectInput(inputId = "countryname", label = "Country Name", choices = "", multiple = T)),
-                       column(3,
-                              selectInput(inputId = "metricname", label = "Metric Name", choices = "", multiple = T)),
-                       column(3,
-                              selectInput(inputId = "elementname", label = "Element Name", choices = "", multiple = T)),
-                       column(3,
-                              selectInput(inputId = "segmentname", label = "Segment Name", choices = "", multiple = T))
-                     ),
-                     fluidRow(
-                       column(3,
-                              actionButton("start", "Omniture Start"),
-                              downloadButton(outputId = "om_data.csv"))
-                     )
+                     dataTableOutput("omdata"),
+                     hr(),
+                     downloadButton(outputId = "om_data.csv")
                    )
       ),
 
@@ -115,27 +117,25 @@ RDMA <- function(){
                        column(4,
                               actionButton(inputId = "Refresh", label = paste0("인증서 : ", Ad_auth)))
                      ),
-                     fluidRow(
-                       column(4,
-                              dateRangeInput(inputId = "adstartdate", label = "Date Range :", start = Sys.Date() - 7, end = Sys.Date()))
+                     hr(),
+                     wellPanel(
+                       fluidRow(
+                         column(4,
+                                dateRangeInput(inputId = "adstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date()))
+                       ),
+                       fluidRow(
+                         column(5,
+                                selectInput(inputId = "reportname", label = "Report Name", choices = RAdwords::reports(), width = "100%")),
+                         column(3,
+                                selectInput(inputId = "Ad_metricname", label = "Metric Name", choices = "", multiple = T)),
+                         column(3,
+                                textInput(inputId = "clientcustomerId", label = "Client Customer Id"))
+                       ),
+                       actionButton(inputId = "adstart", label = "Adwords Start")
                      ),
-                     fluidRow(
-                       column(6,
-                              selectInput(inputId = "reportname", label = "Report Name", choices = RAdwords::reports()))
-                     ),
-                     fluidRow(
-                       column(4,
-                              selectInput(inputId = "Ad_metricname", label = "Metric Name", choices = "", multiple = T))
-                     ),
-                     fluidRow(
-                       column(4,
-                              textInput(inputId = "clientcustomerId", label = "Client Customer Id"))
-                     ),
-                     fluidRow(
-                       column(4,
-                              actionButton(inputId = "Ad_get_data", label = "Adwords Start"),
-                              downloadButton(outputId = "ad_data.csv"))
-                     )
+                     dataTableOutput("addata"),
+                     hr(),
+                     downloadButton(outputId = "ad_data.csv")
                    ))
     )
   )
@@ -213,10 +213,10 @@ RDMA <- function(){
           showModal(text_page("로그인 후 사용가능 합니다"))
         } else {
           om_list <- list(
-              "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
-              "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
-              "segmentname_id" = RSiteCatalyst::GetSegments(input$countryname[1])$id,
-              "segmentname_name" = RSiteCatalyst::GetSegments(input$countryname[1])$name
+            "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
+            "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
+            "segmentname_id" = RSiteCatalyst::GetSegments(input$countryname[1])$id,
+            "segmentname_name" = RSiteCatalyst::GetSegments(input$countryname[1])$name
           )
           om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
@@ -228,30 +228,31 @@ RDMA <- function(){
       })
     })
 
-    observeEvent(input$start, {
+    observeEvent(input$omstart, {
       if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
 
       omni_data.df <<- isolate({lapply(X = input$countryname,
-                              FUN = QueueTrended,
-                              date.from = input$omstartdate[1],
-                              date.to = input$omstartdate[2],
-                              metrics = input$metricname,
-                              elements = input$elementname,
-                              top = 50000,
-                              start = 0,
-                              segment.id = om_info$om_list$segmentname_id[which(input$segmentname == om_info$om_list$segmentname_name)],
-                              enqueueOnly = FALSE,
-                              max.attempts = 1000) %>% do.call(., what = rbind)
+                                       FUN = QueueTrended,
+                                       date.from = input$omstartdate[1],
+                                       date.to = input$omstartdate[2],
+                                       metrics = input$metricname,
+                                       elements = input$elementname,
+                                       top = 50000,
+                                       start = 0,
+                                       segment.id = om_info$om_list$segmentname_id[which(input$segmentname == om_info$om_list$segmentname_name)],
+                                       enqueueOnly = FALSE,
+                                       max.attempts = 1000) %>% do.call(., what = rbind)
       })
       showModal(text_page("옴니츄어 추출 완료"))
+      output$omdata <- renderDataTable(omni_data.df, options = list(aLengthMenu = c(5, 10, 20), iDisplayLength = 10))
     })
 
     # output$omdownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_omni_data.xlsx")},
     #                                          content = function(file){WriteXLS(data, file, row.names = TRUE)})
     output$om_data.csv <- downloadHandler(filename = paste0(Sys.Date(), "_omni_data.xlsx"),
-                                             content = function(file){
-                                               write.table(omni_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
-                                             })
+                                          content = function(file){
+                                            write.table(omni_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
+                                          })
 
     ##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
 
@@ -284,8 +285,8 @@ RDMA <- function(){
         credentials <- getauth(input$clientid, input$clientsecret, input$developertoken)
         credentials <<- credentials
         Adwords_info <<- list("clientid" = input$clientid,
-                             "clientsecret" = input$clientsecret,
-                             "developertoken" = input$developertoken)
+                              "clientsecret" = input$clientsecret,
+                              "developertoken" = input$developertoken)
       })
       showModal(clientToken_page())
     })
@@ -314,7 +315,7 @@ RDMA <- function(){
     #   updateSelectInput(session, "Ad_metricname", choices = RAdwords::metrics(as.character(isolate({input$reportname}))))
     # })
 
-    observeEvent(input$Ad_get_data, {
+    observeEvent(input$adstart, {
       body <- isolate({
         statement(select = input$Ad_metricname,
                   report = input$reportname,
@@ -326,21 +327,22 @@ RDMA <- function(){
                                        google_auth = google_auth,
                                        statement = body)
       showModal(text_page("애드워즈 추출 완료"))
+      output$addata <- renderDataTable(Ad_data.df, options = list(aLengthMenu = c(5, 10, 20), iDisplayLength = 10))
     })
 
     # output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
     #                                          content = function(file){WriteXLS(Ad_data.df, file, row.names = TRUE)})
     output$ad_data.csv <- downloadHandler(filename = paste0(Sys.Date(), "_adwords_data.xlsx"),
-                                             content = function(file){
-                                               write.table(Ad_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
-                                             })
+                                          content = function(file){
+                                            write.table(Ad_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
+                                          })
 
 
 
 
   }
 
-  viewer <- dialogViewer("RDMA", width = 600, height = 600)
+  viewer <- dialogViewer("RDMA", width = 1200, height = 800)
   shiny::runGadget(ui, server, viewer = viewer)
 
 }
