@@ -15,4 +15,6 @@ Imports: shiny,
     WriteXLS,
     RAdwords,
     RCurl,
-    rjson
+    rjson,
+    rstudioapi,
+    shinyWidgets

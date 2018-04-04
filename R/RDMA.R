@@ -6,20 +6,24 @@
 #' @import RAdwords
 #' @import RSiteCatalyst
 #' @import WriteXLS
-
+#' @import shinyWidgets
+#' @import rstudioapi
 
 # rm(list=ls())
 
-library(shiny)
-library(miniUI)
-library(dplyr)
+# library(shiny)
+# library(miniUI)
+# library(dplyr)
+# library(rstudioapi)
+# library(shinyWidgets)
+
 
 # omniture tap package
-library(RAdwords)
-library(RSiteCatalyst)
-library(WriteXLS)
-library(RCurl)
-library(rjson)
+# library(RAdwords)
+# library(RSiteCatalyst)
+# library(WriteXLS)
+# library(RCurl)
+# library(rjson)
 #
 # source("~/RDMA/R/getAuth.R")
 # source("~/RDMA/R/loadToken.R")
@@ -64,11 +68,17 @@ RDMA <- function(){
 
       miniTabPanel(title = "Data Preparation",
                    miniContentPanel(
-                     selectInput(inputId = "sheetcolname", label = "Column Name", choices = df_val, selected = "", size = 9, selectize = FALSE),
-                     selectInput(inputId = "selectdata", label = "Select Data", choices = "", selectize = FALSE, size = 4),
+                     selectInput(inputId = "sheetcolname", label = "Column Name", choices = "", size = 9, selectize = FALSE),
+                     # selectInput(inputId = "selectdata", label = "Select Data", choices = "", selectize = FALSE, size = 4),
                      fileInput("datafile", label = "Data File"),
-                     verbatimTextOutput("test"),
-                     selectInput(inputId = "sheetname", label = "Sheet Name", choices = "", multiple = T)
+                     # verbatimTextOutput("test"),
+                     selectInput(inputId = "sheetname", label = "Sheet Name", choices = "", multiple = T),
+                     actionButton(inputId = "importdata", label = "Import Data"),
+                     selectInput(inputId = "dataset", label = "Data Set", choices = ""),
+                     # dataTableOutput("test2"),
+                     # actionButton(inputId = "test3", label = "test"),
+                     shinyWidgets::radioGroupButtons(inputId = "showoption", label = "Show Data", choices = c("Data Table", "NO"), selected = "NO"),
+                     conditionalPanel(condition = "input.showoption == 'Data Table'", dataTableOutput("sheetdata"))
                    )
       ),
 
@@ -157,6 +167,8 @@ RDMA <- function(){
 
     ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
+    import_data <- reactiveValues()
+
     selectfile <- reactive({
       selectfile <- input$datafile
       if(is.null(selectfile)){
@@ -169,11 +181,28 @@ RDMA <- function(){
       if(is.null(selectfile())){
       } else {
         updateSelectInput(session, "sheetname", choices = readxl::excel_sheets(selectfile()$datapath))
-        updateSelectInput(session, "sheetcolname", choices = )
+        # updateSelectInput(session, "sheetcolname", choices = )
       }
     })
 
-    # output$test <- renderPrint({input$datafile})
+    observeEvent(input$importdata, {
+      isolate({
+        import_data <<- lapply(X = input$sheetname, FUN = function(temp){readxl::read_excel(selectfile()$datapath, sheet = temp)})
+        names(import_data) <<- input$sheetname
+        updateSelectInput(session, "dataset", choices = input$sheetname)
+      })
+    })
+
+    observe({
+      if(input$dataset != ""){
+        output$sheetdata <- renderDataTable({import_data[[input$dataset]]})
+        updateSelectInput(session, "sheetcolname", choices = colnames(import_data[[input$dataset]]))
+      }
+    })
+
+    # output$test <- renderDataTable({import_data[input$dataset]})
+
+    # output$test <- renderPrint({import_data[paste0("'",imput$dataset,"'")]})
     # updateSelectInput(session, "sheetname", choices = sheetname())
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
