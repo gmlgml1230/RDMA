@@ -1,9 +1,9 @@
-# rstudio viewer에서 downloadhandler 사용 불가
-# save 후 데이터 다운로드
-# save 하면 데이터 수정이 될까? 확인하기
-# function 더 추가하기
+#' rstudio viewer에서 downloadhandler 사용 불가
+#' save 후 데이터 다운로드
+#' save 하면 데이터 수정이 될까 확인하기
+#' function 더 추가하기
 
-
+#' @param
 #' RDMA
 #' @export
 #' @import shiny
@@ -14,30 +14,32 @@
 #' @import shinyWidgets
 #' @import rstudioapi
 #' @import shinyAce
+#' @importFrom rstudioapi insertText
+#' @importFrom readxl excel_sheets
 
-# rm(list=ls())
+#' rm(list=ls())
 
-library(shiny)
-library(miniUI)
-library(dplyr)
-library(rstudioapi)
-library(shinyAce)
+#' library(shiny)
+#' library(miniUI)
+#' library(dplyr)
+#' library(rstudioapi)
+#' library(shinyAce)
 
-# omniture tap package
-library(RAdwords)
-library(RSiteCatalyst)
-library(RCurl)
-library(rjson)
-library(shinyWidgets)
-#
-# source("~/RDMA/R/getAuth.R")
-# source("~/RDMA/R/loadToken.R")
+#' omniture tap package
+#' library(RAdwords)
+#' library(RSiteCatalyst)
+#' library(RCurl)
+#' library(rjson)
+#' library(shinyWidgets)
+#'
+#' source("~/RDMA/R/getAuth.R")
+#' source("~/RDMA/R/loadToken.R")
 
 
 shiny.maxRequestSize = 30 * 1024 ^ 2
 
 
-# R Data Manipulation Add-in
+#' R Data Manipulation Add in
 RDMA <- function(){
 
   context <- getActiveDocumentContext()
@@ -261,7 +263,7 @@ RDMA <- function(){
     })
 
     observeEvent(input$save, {
-      insertText(text = input$code)
+      rstudioapi::insertText(text = input$code)
 
 
     })
@@ -461,4 +463,4 @@ RDMA <- function(){
 
 }
 
-RDMA()
+# RDMA()
