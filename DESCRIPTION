@@ -16,4 +16,5 @@ Imports: shiny,
     RCurl,
     rjson,
     rstudioapi,
-    shinyWidgets
+    shinyWidgets,
+    shinyAce
