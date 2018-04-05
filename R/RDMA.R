@@ -1,3 +1,9 @@
+# rstudio viewer에서 downloadhandler 사용 불가
+# save 후 데이터 다운로드
+# save 하면 데이터 수정이 될까? 확인하기
+# function 더 추가하기
+
+
 #' RDMA
 #' @export
 #' @import shiny
@@ -5,25 +11,24 @@
 #' @import dplyr
 #' @import RAdwords
 #' @import RSiteCatalyst
-#' @import WriteXLS
 #' @import shinyWidgets
 #' @import rstudioapi
+#' @import shinyAce
 
 # rm(list=ls())
 
-# library(shiny)
-# library(miniUI)
-# library(dplyr)
-# library(rstudioapi)
-# library(shinyWidgets)
-
+library(shiny)
+library(miniUI)
+library(dplyr)
+library(rstudioapi)
+library(shinyAce)
 
 # omniture tap package
-# library(RAdwords)
-# library(RSiteCatalyst)
-# library(WriteXLS)
-# library(RCurl)
-# library(rjson)
+library(RAdwords)
+library(RSiteCatalyst)
+library(RCurl)
+library(rjson)
+library(shinyWidgets)
 #
 # source("~/RDMA/R/getAuth.R")
 # source("~/RDMA/R/loadToken.R")
@@ -35,6 +40,9 @@ shiny.maxRequestSize = 30 * 1024 ^ 2
 # R Data Manipulation Add-in
 RDMA <- function(){
 
+  context <- getActiveDocumentContext()
+  text <- context$selection[[1]]$text
+  defaultData <- text
 
   if(file.exists(".google.auth.RData")){
     Ad_auth <- "OK"
@@ -69,16 +77,21 @@ RDMA <- function(){
       miniTabPanel(title = "Data Preparation",
                    miniContentPanel(
                      selectInput(inputId = "sheetcolname", label = "Column Name", choices = "", size = 9, selectize = FALSE),
-                     # selectInput(inputId = "selectdata", label = "Select Data", choices = "", selectize = FALSE, size = 4),
+                     selectInput(inputId = "functionlist", label = "Function", choices = c("rename"), selected = "", selectize = FALSE, size = 4),
+                     uiOutput("others"),
                      fileInput("datafile", label = "Data File"),
-                     # verbatimTextOutput("test"),
+                     verbatimTextOutput("test"),
                      selectInput(inputId = "sheetname", label = "Sheet Name", choices = "", multiple = T),
                      actionButton(inputId = "importdata", label = "Import Data"),
                      selectInput(inputId = "dataset", label = "Data Set", choices = ""),
                      # dataTableOutput("test2"),
-                     # actionButton(inputId = "test3", label = "test"),
+                     actionButton(inputId = "add", label = "Add"),
+                     actionButton(inputId = "save", label = "SAVE"),
                      shinyWidgets::radioGroupButtons(inputId = "showoption", label = "Show Data", choices = c("Data Table", "NO"), selected = "NO"),
-                     conditionalPanel(condition = "input.showoption == 'Data Table'", dataTableOutput("sheetdata"))
+                     conditionalPanel(condition = "input.showoption == 'Data Table'", dataTableOutput("sheetdata")),
+                     aceEditor(outputId = "tempcode", value = "", height = "100px"),
+                     aceEditor(outputId = "code", value = "", height = "100px"),
+                     actionButton(inputId = "download", label = "Download", icon = icon("cloud-download"))
                    )
       ),
 
@@ -115,7 +128,8 @@ RDMA <- function(){
                      ),
                      dataTableOutput("omdata"),
                      hr(),
-                     downloadButton(outputId = "om_data.csv")
+                     actionButton(inputId = "omdownload", label = "Download", icon = icon("cloud-download"))
+                     # downloadButton(outputId = "om_data.csv")
                    )
       ),
 
@@ -145,7 +159,8 @@ RDMA <- function(){
                      ),
                      dataTableOutput("addata"),
                      hr(),
-                     downloadButton(outputId = "ad_data.csv")
+                     actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download"))
+                     # downloadButton(outputId = "ad_data.csv")
                    ))
     )
   )
@@ -167,7 +182,8 @@ RDMA <- function(){
 
     ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
-    import_data <- reactiveValues()
+
+    # import_data <- reactiveValues()
 
     selectfile <- reactive({
       selectfile <- input$datafile
@@ -175,6 +191,20 @@ RDMA <- function(){
         return(NULL)
       }
       return(selectfile)
+    })
+
+    makecode <- reactive({
+
+      ret=""
+
+      if(!is.null(input$functionlist)){
+
+        ret=paste0(ret,input$functionlist,"(")
+
+        ret=paste0(ret,")")
+
+      }
+      ret
     })
 
     observe({
@@ -187,22 +217,58 @@ RDMA <- function(){
 
     observeEvent(input$importdata, {
       isolate({
-        import_data <<- lapply(X = input$sheetname, FUN = function(temp){readxl::read_excel(selectfile()$datapath, sheet = temp)})
-        names(import_data) <<- input$sheetname
+        for(i in input$sheetname) {
+          assign(paste0(i, ".df"), readxl::read_excel(selectfile()$datapath, sheet = i), envir = .GlobalEnv)
+        }
+        # import_data <<- lapply(X = input$sheetname, FUN = function(temp){readxl::read_excel(selectfile()$datapath, sheet = temp)})
+        # names(import_data) <<- input$sheetname
         updateSelectInput(session, "dataset", choices = input$sheetname)
       })
     })
 
     observe({
       if(input$dataset != ""){
-        output$sheetdata <- renderDataTable({import_data[[input$dataset]]})
-        updateSelectInput(session, "sheetcolname", choices = colnames(import_data[[input$dataset]]))
+        output$sheetdata <- renderDataTable({eval(parse(text=paste0("`", input$dataset, ".df", "`")))})
+        updateSelectInput(session, "sheetcolname", choices = colnames(eval(parse(text=paste0("`", input$dataset, ".df", "`")))))
+        updateAceEditor(session, "code", value = input$dataset)
       }
+    })
+
+
+    output$others <- renderUI({
+      if(!is.null(input$functionlist)){
+        tagList(
+          if(input$functionlist == "rename") textInput(inputId = "renamevalue", label = "New Column Name")
+        )
+      }
+    })
+
+    observeEvent(input$renamevalue, {
+      if(input$renamevalue != ""){
+        if(input$functionlist == "rename"){
+          temp <- paste0(input$functionlist, "(`", input$renamevalue, "` = `", input$sheetcolname, "`)")
+          updateAceEditor(session, "tempcode", value = temp)
+          # output$test <- renderText({temp})
+        }
+      }
+    })
+
+    observeEvent(input$functionlist, {updateAceEditor(session, "tempcode", value = makecode())})
+    observeEvent(input$sheetcolname, {updateAceEditor(session, "tempcode", value = makecode())})
+
+    observeEvent(input$add, {
+      updateAceEditor(session, "code", value = paste0(input$code, " %>%\n", input$tempcode))
+    })
+
+    observeEvent(input$save, {
+      insertText(text = input$code)
+
+
     })
 
     # output$test <- renderDataTable({import_data[input$dataset]})
 
-    # output$test <- renderPrint({import_data[paste0("'",imput$dataset,"'")]})
+    # output$test <- renderPrint({defaultData})
     # updateSelectInput(session, "sheetname", choices = sheetname())
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
@@ -293,18 +359,17 @@ RDMA <- function(){
                                        start = 0,
                                        segment.id = om_info$om_list$segmentname_id[which(input$segmentname == om_info$om_list$segmentname_name)],
                                        enqueueOnly = FALSE,
-                                       max.attempts = 1000) %>% do.call(., what = rbind)
+                                       max.attempts = 1000) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
       })
       showModal(text_page("옴니츄어 추출 완료"))
-      output$omdata <- renderDataTable(omni_data.df, options = list(aLengthMenu = c(5, 10, 20), iDisplayLength = 10))
+      output$omdata <- renderDataTable(omni_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
-    # output$omdownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_omni_data.xlsx")},
-    #                                          content = function(file){WriteXLS(data, file, row.names = TRUE)})
-    output$om_data.csv <- downloadHandler(filename = paste0(Sys.Date(), "_omni_data.xlsx"),
-                                          content = function(file){
-                                            write.table(omni_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
-                                          })
+    observeEvent(input$omdownload, {
+      write.csv(omni_data.df, paste0(Sys.Date(),"_omniture.csv"), row.names = F)
+      showModal(text_page("다운로드가 완료되었습니다."))
+    })
+
 
     ##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
 
@@ -379,17 +444,14 @@ RDMA <- function(){
                                        google_auth = google_auth,
                                        statement = body)
       showModal(text_page("애드워즈 추출 완료"))
-      output$addata <- renderDataTable(Ad_data.df, options = list(aLengthMenu = c(5, 10, 20), iDisplayLength = 10))
+      output$addata <- renderDataTable(Ad_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
-    # output$addownloaddata <- downloadHandler(filename = function(){paste0(Sys.Date(), "_adwords_data.xlsx")},
-    #                                          content = function(file){WriteXLS(Ad_data.df, file, row.names = TRUE)})
-    output$ad_data.csv <- downloadHandler(filename = paste0(Sys.Date(), "_adwords_data.xlsx"),
-                                          content = function(file){
-                                            write.table(Ad_data.df, file = file, append = T, row.names = F, sep = ',',col.names=TRUE)
-                                          })
 
-
+    observeEvent(input$addownload, {
+      write.csv(Ad_data.df, paste0(Sys.Date(),"_adwords.csv"), row.names = F)
+      showModal(text_page("다운로드가 완료되었습니다."))
+    })
 
 
   }
