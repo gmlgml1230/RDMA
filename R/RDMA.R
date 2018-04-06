@@ -1,10 +1,5 @@
-#' rstudio viewer에서 downloadhandler 사용 불가
-#' save 후 데이터 다운로드
-#' save 하면 데이터 수정이 될까 확인하기
-#' function 더 추가하기
-
-#' @param
 #' RDMA
+# R Data Manipulation Add in
 #' @export
 #' @import shiny
 #' @import miniUI
@@ -12,35 +7,16 @@
 #' @import RAdwords
 #' @import RSiteCatalyst
 #' @import shinyWidgets
-#' @import rstudioapi
 #' @import shinyAce
 #' @importFrom rstudioapi insertText
 #' @importFrom readxl excel_sheets
 
-#' rm(list=ls())
-
-#' library(shiny)
-#' library(miniUI)
-#' library(dplyr)
-#' library(rstudioapi)
-#' library(shinyAce)
-
-#' omniture tap package
-#' library(RAdwords)
-#' library(RSiteCatalyst)
-#' library(RCurl)
-#' library(rjson)
-#' library(shinyWidgets)
-#'
-#' source("~/RDMA/R/getAuth.R")
-#' source("~/RDMA/R/loadToken.R")
 
 
-shiny.maxRequestSize = 30 * 1024 ^ 2
 
-
-#' R Data Manipulation Add in
 RDMA <- function(){
+
+  shiny.maxRequestSize = 30 * 1024 ^ 2
 
   context <- getActiveDocumentContext()
   text <- context$selection[[1]]$text
