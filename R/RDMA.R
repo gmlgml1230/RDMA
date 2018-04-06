@@ -18,10 +18,6 @@ RDMA <- function(){
 
   shiny.maxRequestSize = 30 * 1024 ^ 2
 
-  context <- getActiveDocumentContext()
-  text <- context$selection[[1]]$text
-  defaultData <- text
-
   if(file.exists(".google.auth.RData")){
     Ad_auth <- "OK"
     load(".google.auth.RData")
