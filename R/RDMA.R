@@ -390,7 +390,7 @@ RDMA <- function(){
 
       if(TRUE){
         save("google_auth",file=".google.auth.RData")
-        updateActionButton(session, inputId = "Refresh", label = "인증서 : OK")
+        updateActionButton(session, inputId = "Refresh", label = "Authorization : OK")
         if (!file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",sep="\n")}
         if (file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",append=TRUE)}
       }
