@@ -3,7 +3,7 @@
 
 
 
-## 1. R-Project Download
+## R-Project Download
 
 https://www.r-project.org/
 
@@ -26,7 +26,7 @@ https://www.r-project.org/
 
 
 
-## 2. R-Studio Download
+## R-Studio Download
 
 https://www.rstudio.com/products/rstudio/download/
 
@@ -38,7 +38,7 @@ https://www.rstudio.com/products/rstudio/download/
 
 
 
-## 3. R Package Install
+## R Package Install
 
 - devtools (github 내의 Package install 시 필요)
 
@@ -56,7 +56,7 @@ https://www.rstudio.com/products/rstudio/download/
 
 
 
-## 4. RDMA Omniture
+## RDMA Omniture
 
 - Omniture Login
 
@@ -71,4 +71,7 @@ https://www.rstudio.com/products/rstudio/download/
 - Data Extract (Segment 없을 시 생략 가능)
 
 ![image](https://user-images.githubusercontent.com/36947676/38481447-d331296a-3c05-11e8-8f0c-8ae678619117.png)
-
+![image](https://user-images.githubusercontent.com/36947676/38481641-c128bf34-3c06-11e8-8bca-ba5ec3dd0955.png)
+![image](https://user-images.githubusercontent.com/36947676/38481657-d1716530-3c06-11e8-8b25-8a52094392dd.png)
+![image](https://user-images.githubusercontent.com/36947676/38481669-ee1bc4fa-3c06-11e8-8f10-2fc3005a7d66.png)
+![image](https://user-images.githubusercontent.com/36947676/38481694-0b20abec-3c07-11e8-936c-cd4560c34e98.png)
