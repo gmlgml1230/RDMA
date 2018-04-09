@@ -6,7 +6,7 @@ https://www.r-project.org/
 
 ![image](https://user-images.githubusercontent.com/36947676/38477309-d78b77c2-3bec-11e8-989f-f852a20bbadf.png)
 
-- 한국-서울대 R-project 설치 (어떤것을 설치해도 괜찮음)
+- 한국-서울대 R-project 설치 (다것을 설치해도 괜찮음)
 
 ![image](https://user-images.githubusercontent.com/36947676/38477414-5cc2f032-3bed-11e8-9361-04f41971c7bc.png)
 
