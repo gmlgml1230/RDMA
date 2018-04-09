@@ -354,7 +354,8 @@ RDMA <- function(){
         textInput(inputId = "clientid", label = "Client ID"),
         textInput(inputId = "clientsecret", label = "Client Secret"),
         textInput(inputId = "developertoken", label = "Developer Token"),
-        footer = tagList(actionButton(inputId = "authok", label = "OK"))
+        footer = tagList(actionButton(inputId = "authok", label = "OK"),
+                         modalButton("Cancel"))
       )
     }
 
