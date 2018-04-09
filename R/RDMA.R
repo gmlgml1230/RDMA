@@ -49,27 +49,27 @@ RDMA <- function(){
 
       ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
-      miniTabPanel(title = "Data Preparation",
-                   miniContentPanel(
-                     selectInput(inputId = "sheetcolname", label = "Column Name", choices = "", multiple = T),
-                     selectInput(inputId = "functionlist", label = "Function", choices = c("rename","summarize","group_by","replace"), selected = "", selectize = FALSE, size = 4),
-                     uiOutput("others"),
-                     fileInput("datafile", label = "Data File"),
-                     verbatimTextOutput("test"),
-                     selectInput(inputId = "sheetname", label = "Sheet Name", choices = "", multiple = T),
-                     actionButton(inputId = "importdata", label = "Import Data"),
-                     selectInput(inputId = "dataset", label = "Data Set", choices = ""),
-                     # dataTableOutput("test2"),
-                     actionButton(inputId = "add", label = "Add"),
-                     actionButton(inputId = "save", label = "SAVE"),
-                     actionButton(inputId = "reset", label = "RESET"),
-                     shinyWidgets::radioGroupButtons(inputId = "showoption", label = "Show Data", choices = c("Data Table", "NO"), selected = "NO"),
-                     conditionalPanel(condition = "input.showoption == 'Data Table'", dataTableOutput("sheetdata")),
-                     aceEditor(outputId = "tempcode", value = "", height = "100px"),
-                     aceEditor(outputId = "code", value = "", height = "100px"),
-                     actionButton(inputId = "datadownload", label = "Download", icon = icon("cloud-download"))
-                   )
-      ),
+      # miniTabPanel(title = "Data Preparation",
+      #              miniContentPanel(
+      #                selectInput(inputId = "sheetcolname", label = "Column Name", choices = "", multiple = T),
+      #                selectInput(inputId = "functionlist", label = "Function", choices = c("rename","summarize","group_by","replace"), selected = "", selectize = FALSE, size = 4),
+      #                uiOutput("others"),
+      #                fileInput("datafile", label = "Data File"),
+      #                verbatimTextOutput("test"),
+      #                selectInput(inputId = "sheetname", label = "Sheet Name", choices = "", multiple = T),
+      #                actionButton(inputId = "importdata", label = "Import Data"),
+      #                selectInput(inputId = "dataset", label = "Data Set", choices = ""),
+      #                # dataTableOutput("test2"),
+      #                actionButton(inputId = "add", label = "Add"),
+      #                actionButton(inputId = "save", label = "SAVE"),
+      #                actionButton(inputId = "reset", label = "RESET"),
+      #                shinyWidgets::radioGroupButtons(inputId = "showoption", label = "Show Data", choices = c("Data Table", "NO"), selected = "NO"),
+      #                conditionalPanel(condition = "input.showoption == 'Data Table'", dataTableOutput("sheetdata")),
+      #                aceEditor(outputId = "tempcode", value = "", height = "100px"),
+      #                aceEditor(outputId = "code", value = "", height = "100px"),
+      #                actionButton(inputId = "datadownload", label = "Download", icon = icon("cloud-download"))
+      #              )
+      # ),
 
       ##### Data Merge TAP -----------------------------------------------------------------------------------------------------------------
 
@@ -161,90 +161,86 @@ RDMA <- function(){
     ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
 
-    # File Upload
-    selectfile <- reactive({
-      selectfile <- input$datafile
-      if(is.null(selectfile)){
-        return(NULL)
-      }
-      return(selectfile)
-    })
+    # # File Upload
+    # selectfile <- reactive({
+    #   selectfile <- input$datafile
+    #   if(is.null(selectfile)){
+    #     return(NULL)
+    #   }
+    #   return(selectfile)
+    # })
+    #
+    # # Funtion 사용 시 코드 작성
+    # makecode <- reactive({
+    #   ret <- ""
+    #   temp <- ""
+    #   if(!is.null(input$functionlist)){
+    #     ret <-paste0(ret, input$functionlist, "(")
+    #     if(input$functionlist == "group_by"){
+    #       temp <- paste0(paste0("`", input$sheetcolname, "`"), collapse = ",")
+    #     }
+    #     ret <- paste0(ret,temp,")")
+    #   }
+    #   ret
+    # })
+    #
+    # # Upload File Sheet Name
+    # observe({if(!is.null(selectfile())){updateSelectInput(session, "sheetname", choices = readxl::excel_sheets(selectfile()$datapath))}})
+    #
+    # # Import Data Click 시
+    # observeEvent(input$importdata, {
+    #   for(i in input$sheetname) {
+    #     assign(i, readxl::read_excel(selectfile()$datapath, sheet = i), envir = .GlobalEnv)
+    #   }
+    #   updateSelectInput(session, "dataset", choices = input$sheetname)
+    # })
+    #
+    # # Data set 선택 시 datatable, Column name, code 출력
+    # observe({
+    #   if(input$dataset != ""){
+    #     output$sheetdata <- renderDataTable({variable_name(input$dataset)})
+    #     updateSelectInput(session, "sheetcolname", choices = colnames(variable_name(input$dataset)))
+    #     updateAceEditor(session, "code", value = paste0("`", input$dataset, "` <- ", "`", input$dataset, "`"))
+    #   }
+    # })
+    #
+    # # Function List 선택 시 필요 UI 추가
+    # output$others <- renderUI({
+    #   if(!is.null(input$functionlist)){
+    #     tagList(
+    #       if(input$functionlist == "rename") {textInput(inputId = "renamevalue", label = "New Column Name")},
+    #       if(input$functionlist == "summarize") {eval(parse(text = paste0("textInput(inputId = '", paste0("value",1:length(input$sheetcolname)) ,"', label = '", paste0("value",1:length(input$sheetcolname)), "')", collapse = "")))}
+    #     )
+    #   }
+    # })
+    #
+    # observeEvent(input$renamevalue, {
+    #   if(input$renamevalue != ""){
+    #     if(input$functionlist == "rename"){
+    #       temp <- paste0(input$functionlist, "(`", input$renamevalue, "` = `", input$sheetcolname[1], "`)")
+    #       updateAceEditor(session, "tempcode", value = temp)
+    #     }
+    #   }
+    # })
+    #
+    # observeEvent(input$functionlist, {updateAceEditor(session, "tempcode", value = makecode())})
+    # observeEvent(input$sheetcolname, {updateAceEditor(session, "tempcode", value = makecode())})
+    # observeEvent(input$reset, {updateAceEditor(session, "code", value = paste0("`", input$dataset, "` <- ", "`", input$dataset, "`"))})
+    # observeEvent(input$add, {updateAceEditor(session, "code", value = paste0(input$code, " %>%\n", input$tempcode))})
+    #
+    # observeEvent(input$save, {
+    #   # rstudioapi::insertText(text = input$code)
+    #   assign(input$dataset, eval(parse(text = input$code)), envir = .GlobalEnv)
+    #   output$sheetdata <- renderDataTable({variable_name(input$dataset)})
+    #   updateSelectInput(session, "sheetcolname", choices = colnames(variable_name(input$dataset)))
+    #   showModal(text_page("변경되었습니다."))
+    # })
+    #
+    # observeEvent(input$datadownload, {
+    #   write.csv(variable_name(input$dataset), paste0(Sys.Date(), gsub("[~!@#$%^&*()<>?_+ ]", "", input$dataset), ".csv"), row.names = F)
+    #   showModal(text_page("다운로드가 완료되었습니다."))
+    # })
 
-    # Funtion 사용 시 코드 작성
-    makecode <- reactive({
-      ret <- ""
-      temp <- ""
-      if(!is.null(input$functionlist)){
-        ret <-paste0(ret, input$functionlist, "(")
-        if(input$functionlist == "group_by"){
-          temp <- paste0(paste0("`", input$sheetcolname, "`"), collapse = ",")
-        }
-        ret <- paste0(ret,temp,")")
-      }
-      ret
-    })
-
-    # Upload File Sheet Name
-    observe({if(!is.null(selectfile())){updateSelectInput(session, "sheetname", choices = readxl::excel_sheets(selectfile()$datapath))}})
-
-    # Import Data Click 시
-    observeEvent(input$importdata, {
-      for(i in input$sheetname) {
-        assign(i, readxl::read_excel(selectfile()$datapath, sheet = i), envir = .GlobalEnv)
-      }
-      updateSelectInput(session, "dataset", choices = input$sheetname)
-    })
-
-    # Data set 선택 시 datatable, Column name, code 출력
-    observe({
-      if(input$dataset != ""){
-        output$sheetdata <- renderDataTable({variable_name(input$dataset)})
-        updateSelectInput(session, "sheetcolname", choices = colnames(variable_name(input$dataset)))
-        updateAceEditor(session, "code", value = paste0("`", input$dataset, "` <- ", "`", input$dataset, "`"))
-      }
-    })
-
-    # Function List 선택 시 필요 UI 추가
-    output$others <- renderUI({
-      if(!is.null(input$functionlist)){
-        tagList(
-          if(input$functionlist == "rename") {textInput(inputId = "renamevalue", label = "New Column Name")},
-          if(input$functionlist == "summarize") {eval(parse(text = paste0("textInput(inputId = '", paste0("value",1:length(input$sheetcolname)) ,"', label = '", paste0("value",1:length(input$sheetcolname)), "')", collapse = "")))}
-        )
-      }
-    })
-
-    observeEvent(input$renamevalue, {
-      if(input$renamevalue != ""){
-        if(input$functionlist == "rename"){
-          temp <- paste0(input$functionlist, "(`", input$renamevalue, "` = `", input$sheetcolname[1], "`)")
-          updateAceEditor(session, "tempcode", value = temp)
-        }
-      }
-    })
-
-    observeEvent(input$functionlist, {updateAceEditor(session, "tempcode", value = makecode())})
-    observeEvent(input$sheetcolname, {updateAceEditor(session, "tempcode", value = makecode())})
-    observeEvent(input$reset, {updateAceEditor(session, "code", value = paste0("`", input$dataset, "` <- ", "`", input$dataset, "`"))})
-    observeEvent(input$add, {updateAceEditor(session, "code", value = paste0(input$code, " %>%\n", input$tempcode))})
-
-    observeEvent(input$save, {
-      # rstudioapi::insertText(text = input$code)
-      assign(input$dataset, eval(parse(text = input$code)), envir = .GlobalEnv)
-      output$sheetdata <- renderDataTable({variable_name(input$dataset)})
-      updateSelectInput(session, "sheetcolname", choices = colnames(variable_name(input$dataset)))
-      showModal(text_page("변경되었습니다."))
-    })
-
-    observeEvent(input$datadownload, {
-      write.csv(variable_name(input$dataset), paste0(Sys.Date(), gsub("[~!@#$%^&*()<>?_+ ]", "", input$dataset), ".csv"), row.names = F)
-      showModal(text_page("다운로드가 완료되었습니다."))
-    })
-    #assign(a, eval(parse(text = a)) %>% rename(ct = Country))
-    # output$test <- renderDataTable({import_data[input$dataset]})
-
-    # output$test <- renderPrint({defaultData})
-    # updateSelectInput(session, "sheetname", choices = sheetname())
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
