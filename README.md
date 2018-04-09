@@ -4,7 +4,8 @@
 
 https://www.r-project.org/
 
-![image](/uploads/50763cdb1495661c94cfe6a7c835d084/image.png)
+![image](https://user-images.githubusercontent.com/36947676/38477309-d78b77c2-3bec-11e8-989f-f852a20bbadf.png)
+
 
 devtools::install_github("gmlgml1230/RDMA")
 
