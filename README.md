@@ -1,5 +1,6 @@
 ## R Add In RDMA 설치방법 & 사용가이드
 
+
 ## 1. R-Project Download
 
 https://www.r-project.org/
@@ -19,6 +20,8 @@ https://www.r-project.org/
 ![image](https://user-images.githubusercontent.com/36947676/38480176-e9bc17b4-3bfe-11e8-8280-b7d100653646.png)
 
 
+
+
 ## 2. R-Studio Download
 
 https://www.rstudio.com/products/rstudio/download/
@@ -28,4 +31,15 @@ https://www.rstudio.com/products/rstudio/download/
 ![image](https://user-images.githubusercontent.com/36947676/38480229-3ffa14f0-3bff-11e8-9d79-710b2a5d6b1d.png)
 
 
+
+
 ## 3. R Package Install
+
+- devtools (github 내의 Package install 시 필요)
+
+![image](https://user-images.githubusercontent.com/36947676/38480605-7620d3b4-3c01-11e8-8dd2-256ce7fcb644.png)
+
+- RDMA
+
+![image](https://user-images.githubusercontent.com/36947676/38480661-bdc2a602-3c01-11e8-9fac-d7e7f57c69fd.png)
+
