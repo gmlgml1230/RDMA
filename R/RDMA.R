@@ -115,7 +115,7 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(4,
-                              actionButton(inputId = "Refresh", label = paste0("인증서 : ", Ad_auth)))
+                              actionButton(inputId = "Refresh", label = paste0("Authorization : ", Ad_auth)))
                      ),
                      hr(),
                      wellPanel(
