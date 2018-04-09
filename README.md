@@ -48,3 +48,20 @@ https://www.rstudio.com/products/rstudio/download/
 ![image](https://user-images.githubusercontent.com/36947676/38480794-877a3316-3c02-11e8-9188-c3e0a7a43051.png)
 
 
+
+## 4. RDMA Omniture
+
+- Omniture Login
+
+![image](https://user-images.githubusercontent.com/36947676/38481107-1761cb28-3c04-11e8-97d4-8392f573779a.png)
+![image](https://user-images.githubusercontent.com/36947676/38481141-4018726a-3c04-11e8-85b9-0751fdab7aa9.png)
+
+- Data Update (Metric & Element & Segment 값을 처음 한 번만 업데이트하면되며 업데이트가 필요할 때 해당 국가 선택 후 사용)
+
+![image](https://user-images.githubusercontent.com/36947676/38481342-24ed94c4-3c05-11e8-9187-8dd82017d8a1.png)
+![image](https://user-images.githubusercontent.com/36947676/38481186-77a8601e-3c04-11e8-8ffa-4129b99e9a4b.png)
+
+- Data Extract (Segment 없을 시 생략 가능)
+
+![image](https://user-images.githubusercontent.com/36947676/38481447-d331296a-3c05-11e8-8f0c-8ae678619117.png)
+
