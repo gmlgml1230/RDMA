@@ -46,9 +46,9 @@ https://www.rstudio.com/products/rstudio/download/
 
 - RDMA
 
-library(devtools)
-install_github("gmlgml1230/RDMA")
-library(RDMA)
+library(devtools)  
+install_github("gmlgml1230/RDMA")  
+library(RDMA)  
 ![image](https://user-images.githubusercontent.com/36947676/38480763-6096133c-3c02-11e8-8f09-4ed8966e2144.png)
 
 - RDMA Add in 확인
