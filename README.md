@@ -77,7 +77,8 @@ library(RDMA)
 ![image](https://user-images.githubusercontent.com/36947676/38485677-9ba56b9a-3c15-11e8-8241-8a4df4c2d761.png)
 ![image](https://user-images.githubusercontent.com/36947676/38485715-bd69dc98-3c15-11e8-8982-496a74659034.png)
 ![image](https://user-images.githubusercontent.com/36947676/38485744-d61f3d0a-3c15-11e8-8306-e6d8fbeacfaa.png)
-![image](https://user-images.githubusercontent.com/36947676/38485640-7bb082e8-3c15-11e8-9571-e2d2b0638538.png)  
-- 위의 코드 입력  
 ![image](https://user-images.githubusercontent.com/36947676/38485770-f0e6def4-3c15-11e8-8083-eb373357aa75.png)  
-
+  
+- 위의 코드 입력  
+  
+![image](https://user-images.githubusercontent.com/36947676/38485640-7bb082e8-3c15-11e8-9571-e2d2b0638538.png)  
