@@ -245,8 +245,8 @@ RDMA <- function(){
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
     omni_data.df <- reactiveValues()
-    om_id <- reactiveValues()
-    om_pw <- reactiveValues()
+    # om_id <- reactiveValues()
+    # om_pw <- reactiveValues()
 
 
     if(file.exists(".om.info.RData")){
