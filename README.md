@@ -1,7 +1,4 @@
 ## R Add In RDMA 설치방법 & 사용가이드
-  
-  
-   
    
 ## R-Project Download
 
