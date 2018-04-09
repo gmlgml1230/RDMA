@@ -435,5 +435,3 @@ RDMA <- function(){
   shiny::runGadget(ui, server, viewer = viewer)
 
 }
-
-RDMA()
