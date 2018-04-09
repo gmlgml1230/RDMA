@@ -61,6 +61,7 @@ https://www.rstudio.com/products/rstudio/download/
 - Omniture Login
 
 ![image](https://user-images.githubusercontent.com/36947676/38481107-1761cb28-3c04-11e8-97d4-8392f573779a.png)
+![image](https://user-images.githubusercontent.com/36947676/38481966-43883bd4-3c08-11e8-9973-82a94a3812c4.png)
 ![image](https://user-images.githubusercontent.com/36947676/38481141-4018726a-3c04-11e8-85b9-0751fdab7aa9.png)
 
 - Data Update (Metric & Element & Segment 값을 처음 한 번만 업데이트하면되며 업데이트가 필요할 때 해당 국가 선택 후 사용)
