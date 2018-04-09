@@ -14,3 +14,18 @@ https://www.r-project.org/
 
 ![image](https://user-images.githubusercontent.com/36947676/38478854-60d96440-3bf6-11e8-90d4-63f8b3b60b4a.png)
 
+- Base 선택
+
+![image](https://user-images.githubusercontent.com/36947676/38480176-e9bc17b4-3bfe-11e8-8280-b7d100653646.png)
+
+
+## 2. R-Studio Download
+
+https://www.rstudio.com/products/rstudio/download/
+
+- 해당 OS에 맞게 선택
+
+![image](https://user-images.githubusercontent.com/36947676/38480229-3ffa14f0-3bff-11e8-9d79-710b2a5d6b1d.png)
+
+
+## 3. R Package Install
