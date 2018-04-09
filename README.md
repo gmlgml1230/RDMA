@@ -88,3 +88,4 @@ library(RDMA)
 - 추출 데이터 확인 및 다운로드  
   
 ![image](https://user-images.githubusercontent.com/36947676/38486868-41686408-3c19-11e8-9b03-454cb88ec24b.png)
+![image](https://user-images.githubusercontent.com/36947676/38486933-72044fb4-3c19-11e8-89e0-d683947b76be.png)
