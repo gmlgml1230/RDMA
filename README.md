@@ -18,11 +18,6 @@ https://www.r-project.org/
 
 ![image](https://user-images.githubusercontent.com/36947676/38480176-e9bc17b4-3bfe-11e8-8280-b7d100653646.png)
 
-
-
-
-
-
 ## R-Studio Download
 
 https://www.rstudio.com/products/rstudio/download/
@@ -30,10 +25,6 @@ https://www.rstudio.com/products/rstudio/download/
 - 해당 OS에 맞게 선택
 
 ![image](https://user-images.githubusercontent.com/36947676/38480229-3ffa14f0-3bff-11e8-9d79-710b2a5d6b1d.png)
-
-
-
-
 
 ## R Package Install
 
@@ -51,9 +42,6 @@ library(RDMA)
 - RDMA Add in 확인
 
 ![image](https://user-images.githubusercontent.com/36947676/38480794-877a3316-3c02-11e8-9188-c3e0a7a43051.png)
-
-
-
 
 
 ## RDMA Omniture
@@ -79,3 +67,10 @@ library(RDMA)
 ![image](https://user-images.githubusercontent.com/36947676/38481669-ee1bc4fa-3c06-11e8-8f10-2fc3005a7d66.png)
 ![image](https://user-images.githubusercontent.com/36947676/38481694-0b20abec-3c07-11e8-936c-cd4560c34e98.png)
 ![image](https://user-images.githubusercontent.com/36947676/38482441-448ddb7c-3c0a-11e8-8438-b28bc535f205.png)
+
+## RDMA Adwords
+
+- Adwords 인증 (No : 클릭 시 인증창 활성화, OK : 클릭 시 반응 없음)
+
+![image](https://user-images.githubusercontent.com/36947676/38482919-1916c95c-3c0c-11e8-962b-74ba90ff71f4.png)
+![image](https://user-images.githubusercontent.com/36947676/38482945-2c0b3688-3c0c-11e8-95c7-40575daed823.png)
