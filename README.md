@@ -1,4 +1,4 @@
-### R Add In RDMA 설치방법 & 사용가이드
+## R Add In RDMA 설치방법 & 사용가이드
 
 
 ## 1. R-Project Download
@@ -44,4 +44,7 @@ https://www.rstudio.com/products/rstudio/download/
 ![image](https://user-images.githubusercontent.com/36947676/38480763-6096133c-3c02-11e8-8f09-4ed8966e2144.png)
 
 - RDMA Add in 확인
+
 ![image](https://user-images.githubusercontent.com/36947676/38480794-877a3316-3c02-11e8-9188-c3e0a7a43051.png)
+
+
