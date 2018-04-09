@@ -1,6 +1,9 @@
 ## R Add In RDMA 설치방법 & 사용가이드
 
-## 1. R Download  
+## 1. R-Project Download
+
+https://www.r-project.org/
+
 
 
 devtools::install_github("gmlgml1230/RDMA")
