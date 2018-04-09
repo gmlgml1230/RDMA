@@ -76,9 +76,15 @@ library(RDMA)
 ![image](https://user-images.githubusercontent.com/36947676/38482945-2c0b3688-3c0c-11e8-95c7-40575daed823.png)  
 ![image](https://user-images.githubusercontent.com/36947676/38485677-9ba56b9a-3c15-11e8-8241-8a4df4c2d761.png)  
 ![image](https://user-images.githubusercontent.com/36947676/38485715-bd69dc98-3c15-11e8-8982-496a74659034.png)  
-![image](https://user-images.githubusercontent.com/36947676/38485744-d61f3d0a-3c15-11e8-8306-e6d8fbeacfaa.png)  
-  
-- 위의 코드 입력  
-  
+![image](https://user-images.githubusercontent.com/36947676/38485744-d61f3d0a-3c15-11e8-8306-e6d8fbeacfaa.png)    
 ![image](https://user-images.githubusercontent.com/36947676/38485640-7bb082e8-3c15-11e8-9571-e2d2b0638538.png)  
 ![image](https://user-images.githubusercontent.com/36947676/38485770-f0e6def4-3c15-11e8-8083-eb373357aa75.png)  
+  
+- Date & Report Name & Metric Name & Client Customer ID 선택 후 Date Extract  
+  
+![image](https://user-images.githubusercontent.com/36947676/38486803-070e1d16-3c19-11e8-88b9-0168f144c132.png)  
+![image](https://user-images.githubusercontent.com/36947676/38486814-14fccd28-3c19-11e8-8553-96dfb5a60753.png)  
+  
+- 추출 데이터 확인 및 다운로드  
+  
+![image](https://user-images.githubusercontent.com/36947676/38486868-41686408-3c19-11e8-9b03-454cb88ec24b.png)
