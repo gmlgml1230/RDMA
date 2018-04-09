@@ -73,13 +73,16 @@ ID & Pass Word 입력 후 OK 클릭
 ## RDMA Adwords
 
 - Adwords 인증 (No : 클릭 시 인증창 활성화, OK : 클릭 시 반응 없음)
-
+  
 ![image](https://user-images.githubusercontent.com/36947676/38482919-1916c95c-3c0c-11e8-962b-74ba90ff71f4.png)  
-![image](https://user-images.githubusercontent.com/36947676/38482945-2c0b3688-3c0c-11e8-95c7-40575daed823.png)  
-![image](https://user-images.githubusercontent.com/36947676/38485677-9ba56b9a-3c15-11e8-8241-8a4df4c2d761.png)  
+Client ID & Client Secret & Developer Token 입력 후 OK 클릭  
+![image](https://user-images.githubusercontent.com/36947676/38482945-2c0b3688-3c0c-11e8-95c7-40575daed823.png)  
+해당 계정 선택  
+![image](https://user-images.githubusercontent.com/36947676/38485677-9ba56b9a-3c15-11e8-8241-8a4df4c2d761.png)  
 ![image](https://user-images.githubusercontent.com/36947676/38485715-bd69dc98-3c15-11e8-8982-496a74659034.png)  
-![image](https://user-images.githubusercontent.com/36947676/38485744-d61f3d0a-3c15-11e8-8306-e6d8fbeacfaa.png)    
-![image](https://user-images.githubusercontent.com/36947676/38485640-7bb082e8-3c15-11e8-9571-e2d2b0638538.png)  
+![image](https://user-images.githubusercontent.com/36947676/38485744-d61f3d0a-3c15-11e8-8306-e6d8fbeacfaa.png)  
+위의 값(Client Token) 입력
+![image](https://user-images.githubusercontent.com/36947676/38485640-7bb082e8-3c15-11e8-9571-e2d2b0638538.png)  
 ![image](https://user-images.githubusercontent.com/36947676/38485770-f0e6def4-3c15-11e8-8083-eb373357aa75.png)  
   
 - Date & Report Name & Metric Name & Client Customer ID 선택 후 Date Extract  
