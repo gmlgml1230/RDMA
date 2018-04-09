@@ -43,7 +43,7 @@ RDMA <- function(){
   ##### UI -----------------------------------------------------------------------------------------------------------------------------
 
   ui <- miniPage(
-    gadgetTitleBar("Artience Data Preparation Tool"),
+    gadgetTitleBar("Data Preparation Tool"),
 
     miniTabstripPanel(
 
