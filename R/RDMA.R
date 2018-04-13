@@ -8,22 +8,33 @@
 #' @import RSiteCatalyst
 #' @import shinyWidgets
 #' @import shinyAce
+#' @import searchConsoleR
 #' @importFrom rstudioapi insertText
 #' @importFrom readxl excel_sheets
 
 
 
-
 RDMA <- function(){
 
+  options(httr_oauth_cache=T)
   shiny.maxRequestSize = 30 * 1024 ^ 2
 
   if(file.exists(".google.auth.RData")){
     Ad_auth <- "OK"
-    load(".google.auth.RData")
   } else {
     Ad_auth <- "NO"
   }
+
+  if(file.exists("sc.oauth")){
+    sc_auth <- "OK"
+    searchConsoleR::scr_auth()
+    website_url <- searchConsoleR::list_websites()$siteUrl
+  } else {
+    sc_auth <- "NO"
+    website_url <- NULL
+  }
+
+
 
   # dplyr package Check
   if(!isNamespaceLoaded("dplyr")){attachNamespace("dplyr")}
@@ -75,6 +86,38 @@ RDMA <- function(){
 
       # miniTabPanel(title = "Data Merge"),
 
+      ##### Search Console -----------------------------------------------------------------------------------------------------------------
+
+      miniTabPanel(title = "Search Console",
+                   miniContentPanel(
+                     fluidRow(
+                       column(6,
+                              actionButton(inputId = "scRefresh", label = paste0("Authorization : ", sc_auth)),
+                              actionButton(inputId = "scremove", label = "Remove Auth")
+                       )
+                     ),
+                     hr(),
+                     wellPanel(
+                       fluidRow(
+                         column(3,
+                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date()))
+                       ),
+                       fluidRow(
+                         column(3,
+                                selectizeInput(inputId = "scwebsite", label = "Web Site URL", choices = if(is.null(website_url)){""} else {website_url}, multiple = T)),
+                         column(3,
+                                selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
+                       ),
+                       shinyWidgets::materialSwitch("scfilter", "Filter", status="info"),
+                       conditionalPanel(condition='input.scfilter==true', uiOutput("add_scfilter")),
+                       actionButton(inputId = "scstart", label = "S&C Start")
+                     ),
+                     hr(),
+                     dataTableOutput("scdata")
+                     # selectInput(inputId = "scdimension", label = "Dimension", choices = "", multiple = T),
+                   )
+      ),
+
       ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
       miniTabPanel(title = "Omniture",
@@ -92,13 +135,13 @@ RDMA <- function(){
                        ),
                        fluidRow(
                          column(3,
-                                selectInput(inputId = "countryname", label = "Country Name", choices = "", multiple = T)),
+                                selectizeInput(inputId = "countryname", label = "Country Name", choices = "", multiple = T)),
                          column(3,
-                                selectInput(inputId = "metricname", label = "Metric Name", choices = "", multiple = T)),
+                                selectizeInput(inputId = "metricname", label = "Metric Name", choices = "", multiple = T)),
                          column(3,
-                                selectInput(inputId = "elementname", label = "Element Name", choices = "", multiple = T)),
+                                selectizeInput(inputId = "elementname", label = "Element Name", choices = "", multiple = T)),
                          column(3,
-                                selectInput(inputId = "segmentname", label = "Segment Name", choices = "", multiple = T))
+                                selectizeInput(inputId = "segmentname", label = "Segment Name", choices = "", multiple = T))
                        ),
                        actionButton("omstart", "Omniture Start")
                      ),
@@ -114,8 +157,9 @@ RDMA <- function(){
       miniTabPanel(title = "Adwords",
                    miniContentPanel(
                      fluidRow(
-                       column(4,
-                              actionButton(inputId = "Refresh", label = paste0("Authorization : ", Ad_auth)))
+                       column(8,
+                              actionButton(inputId = "Refresh", label = paste0("Authorization : ", Ad_auth)),
+                              actionButton(inputId = "adremove", label = "Remove Auth"))
                      ),
                      hr(),
                      wellPanel(
@@ -242,6 +286,41 @@ RDMA <- function(){
     # })
 
 
+    ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
+
+    sc_data.df <- reactiveValues()
+
+    observeEvent(input$scRefresh, {
+      if(sc_auth == "NO"){
+        searchConsoleR::scr_auth()
+        website_url <- searchConsoleR::list_websites()$siteUrl
+        updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
+        sc_auth <- "OK"
+        updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
+      }
+    })
+
+    observeEvent(input$scremove, {
+      file.remove("sc.oauth")
+      sc_auth <- "NO"
+      updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
+    })
+
+    observeEvent(input$scstart, {
+      sc_data.df <<- isolate({
+        lapply(X = input$scwebsite,
+               FUN = search_analytics,
+               startDate = input$scstartdate[1],
+               endDate = input$scstartdate[2],
+               dimensions = input$scdimension,
+               rowLimit = 5000,
+               walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+      })
+      showModal(text_page("S&C Data 추출 완료"))
+      output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+    })
+
+
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
     omni_data.df <- reactiveValues()
@@ -253,9 +332,9 @@ RDMA <- function(){
       load(".om.info.RData")
       om_id <- om_info$ID
       om_pw <- om_info$PW
-      updateSelectInput(session, "metricname", choices = om_info$om_list$metricname)
-      updateSelectInput(session, "elementname", choices = om_info$om_list$elementname)
-      updateSelectInput(session, "segmentname", choices = om_info$om_list$segmentname_name)
+      updateSelectizeInput(session, "metricname", choices = om_info$om_list$metricname, options = list(maxOptions = length(om_info$om_list$metricname)))
+      updateSelectizeInput(session, "elementname", choices = om_info$om_list$elementname, options = list(maxOptions = length(om_info$om_list$elementname)))
+      updateSelectizeInput(session, "segmentname", choices = om_info$om_list$segmentname_name, options = list(maxOptions = length(om_info$om_list$segmentname_name)))
     } else {
       om_id <- ""
       om_pw <- ""
@@ -289,7 +368,7 @@ RDMA <- function(){
         }
 
         RSiteCatalyst::SCAuth(isolate({input$om_id}), isolate({input$om_pw}))
-        updateSelectInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
+        updateSelectizeInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
         showModal(text_page("완료 되었습니다"))
       })
     })
@@ -309,9 +388,9 @@ RDMA <- function(){
           )
           om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
-          updateSelectInput(session, "metricname", choices = om_list$metricname)
-          updateSelectInput(session, "elementname", choices = om_list$elementname)
-          updateSelectInput(session, "segmentname", choices = om_list$segmentname_name)
+          updateSelectizeInput(session, "metricname", choices = om_list$metricname, options = list(maxOptions = length(om_list$metricname)))
+          updateSelectizeInput(session, "elementname", choices = om_list$elementname, options = list(maxOptions = length(om_list$elementname)))
+          updateSelectizeInput(session, "segmentname", choices = om_list$segmentname_name, options = list(maxOptions = length(om_list$segmentname_name)))
           showModal(text_page("완료 되었습니다"))
         }
       })
@@ -388,13 +467,14 @@ RDMA <- function(){
       google_auth$credentials <<- credentials
       google_auth$access <<- access_token
       google_auth$Adwords_info <<- Adwords_info
+      save("google_auth",file=".google.auth.RData")
+      updateActionButton(session, inputId = "Refresh", label = "Authorization : OK")
+    })
 
-      if(TRUE){
-        save("google_auth",file=".google.auth.RData")
-        updateActionButton(session, inputId = "Refresh", label = "Authorization : OK")
-        if (!file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",sep="\n")}
-        if (file.exists(".gitignore")){cat(".google.auth.RData",file=".gitignore",append=TRUE)}
-      }
+    observeEvent(input$adremove, {
+      file.remove(".google.auth.RData")
+      Ad_auth <- "NO"
+      updateActionButton(session, inputId = "Refresh", label = "Authorization : NO")
     })
 
     observe(
@@ -432,3 +512,4 @@ RDMA <- function(){
   shiny::runGadget(ui, server, viewer = viewer)
 
 }
+

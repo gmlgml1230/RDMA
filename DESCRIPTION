@@ -18,4 +18,5 @@ Imports: shiny,
     rstudioapi,
     shinyWidgets,
     shinyAce,
-    readxl
+    readxl,
+    searchConsoleR
