@@ -8,9 +8,9 @@
 #' @import RSiteCatalyst
 #' @import shinyWidgets
 #' @import shinyAce
-#' @import searchConsoleR
 #' @importFrom rstudioapi insertText
 #' @importFrom readxl excel_sheets
+
 
 
 
@@ -112,8 +112,9 @@ RDMA <- function(){
                        conditionalPanel(condition='input.scfilter==true', uiOutput("add_scfilter")),
                        actionButton(inputId = "scstart", label = "S&C Start")
                      ),
+                     dataTableOutput("scdata"),
                      hr(),
-                     dataTableOutput("scdata")
+                     actionButton(inputId = "scdownload", label = "Download", icon = icon("cloud-download"))
                      # selectInput(inputId = "scdimension", label = "Dimension", choices = "", multiple = T),
                    )
       ),
@@ -191,13 +192,18 @@ RDMA <- function(){
     # Shiny에서 5MB의 제한을 잡아놓은걸 30MB로 늘린 것
     options(shiny.maxRequestSize = 30 * 1024 ^ 2)
 
-    text_page <- function(text){
-      modalDialog(
-        text,
-        footer = tagList(
-          modalButton("Cancel")
+    text_page <- function(text, buffer = FALSE){
+      if(buffer == FALSE){
+        modalDialog(
+          text,
+          footer = tagList(
+            modalButton("Cancel")
+          )
         )
-      )
+      } else {
+        modalDialog(text, easyClose = TRUE, footer = NULL)
+      }
+
     }
 
     variable_name <- function(name){eval(parse(text=paste0("`", name,"`")))}
@@ -307,6 +313,7 @@ RDMA <- function(){
     })
 
     observeEvent(input$scstart, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
       sc_data.df <<- isolate({
         lapply(X = input$scwebsite,
                FUN = search_analytics,
@@ -316,8 +323,16 @@ RDMA <- function(){
                rowLimit = 5000,
                walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
       })
+      removeModal()
       showModal(text_page("S&C Data 추출 완료"))
       output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+    })
+
+    observeEvent(input$scdownload, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+      write.csv(sc_data.df, paste0(Sys.Date(),"_SearchConsole.csv"), row.names = F)
+      removeModal()
+      showModal(text_page("다운로드가 완료되었습니다."))
     })
 
 
@@ -366,8 +381,9 @@ RDMA <- function(){
             save("om_info", file = ".om.info.RData")
           }
         }
-
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
         RSiteCatalyst::SCAuth(isolate({input$om_id}), isolate({input$om_pw}))
+        removeModal()
         updateSelectizeInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
         showModal(text_page("완료 되었습니다"))
       })
@@ -375,17 +391,19 @@ RDMA <- function(){
 
     observeEvent(input$om_update, {
       isolate({
-        if(input$countryname == ""){
+        if(is.null(input$countryname)){
           showModal(text_page("국가를 선택해주세요"))
         } else if(file.exists(".om.info.RData") == FALSE){
           showModal(text_page("로그인 후 사용가능 합니다"))
         } else {
+          showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
           om_list <- list(
             "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
             "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
             "segmentname_id" = RSiteCatalyst::GetSegments(input$countryname[1])$id,
             "segmentname_name" = RSiteCatalyst::GetSegments(input$countryname[1])$name
           )
+          removeModal()
           om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
           updateSelectizeInput(session, "metricname", choices = om_list$metricname, options = list(maxOptions = length(om_list$metricname)))
@@ -398,7 +416,7 @@ RDMA <- function(){
 
     observeEvent(input$omstart, {
       if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
-
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
       omni_data.df <<- isolate({lapply(X = input$countryname,
                                        FUN = QueueTrended,
                                        date.from = input$omstartdate[1],
@@ -411,12 +429,15 @@ RDMA <- function(){
                                        enqueueOnly = FALSE,
                                        max.attempts = 1000) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
       })
+      removeModal()
       showModal(text_page("옴니츄어 추출 완료"))
       output$omdata <- renderDataTable(omni_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
     observeEvent(input$omdownload, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
       write.csv(omni_data.df, paste0(Sys.Date(),"_omniture.csv"), row.names = F)
+      removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
     })
 
@@ -491,17 +512,24 @@ RDMA <- function(){
                   start = input$adstartdate[1],
                   end = input$adstartdate[2])
       })
-
-      Ad_data.df <<- RAdwords::getData(clientCustomerId = isolate({as.character(input$clientcustomerId)}),
-                                       google_auth = google_auth,
-                                       statement = body)
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+      isolate({
+        Ad_clientcustomerId <- unlist(strsplit(input$clientcustomerId, ","))
+        Ad_data.df <<- lapply(X = Ad_clientcustomerId,
+                              FUN = RAdwords::getData,
+                              google_auth = google_auth,
+                              statement = body) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+      })
+      removeModal()
       showModal(text_page("애드워즈 추출 완료"))
       output$addata <- renderDataTable(Ad_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
 
     observeEvent(input$addownload, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
       write.csv(Ad_data.df, paste0(Sys.Date(),"_adwords.csv"), row.names = F)
+      removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
     })
 
