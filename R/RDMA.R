@@ -181,7 +181,6 @@ RDMA <- function(){
                      dataTableOutput("addata"),
                      hr(),
                      actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download"))
-                     # downloadButton(outputId = "ad_data.csv")
                    ))
     )
   )
@@ -308,6 +307,7 @@ RDMA <- function(){
 
     observeEvent(input$scremove, {
       file.remove("sc.oauth")
+      file.remove(".httr-oauth")
       sc_auth <- "NO"
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
@@ -383,8 +383,8 @@ RDMA <- function(){
         }
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
         RSiteCatalyst::SCAuth(isolate({input$om_id}), isolate({input$om_pw}))
-        removeModal()
         updateSelectizeInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
+        removeModal()
         showModal(text_page("완료 되었습니다"))
       })
     })
@@ -541,3 +541,4 @@ RDMA <- function(){
 
 }
 
+RDMA()
