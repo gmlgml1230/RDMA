@@ -296,6 +296,15 @@ RDMA <- function(){
 
     sc_data.df <- reactiveValues()
 
+    my_search_analytics <- function(siteURL, startDate, endDate, dimensions, rowLimit, walk_data){
+      temp_df <- search_analytics(siteURL = siteURL,
+                                  startDate = startDate,
+                                  endDate = endDate,
+                                  dimensions = dimensions,
+                                  rowLimit = rowLimit,
+                                  walk_data = walk_data) %>% mutate(url = siteURL)
+    }
+
     observeEvent(input$scRefresh, {
       if(sc_auth == "NO"){
         searchConsoleR::scr_auth()
@@ -317,7 +326,7 @@ RDMA <- function(){
       showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
       sc_data.df <<- isolate({
         lapply(X = input$scwebsite,
-               FUN = search_analytics,
+               FUN = my_search_analytics,
                startDate = input$scstartdate[1],
                endDate = input$scstartdate[2],
                dimensions = input$scdimension,
