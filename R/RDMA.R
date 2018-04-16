@@ -8,6 +8,7 @@
 #' @import RSiteCatalyst
 #' @import shinyWidgets
 #' @import shinyAce
+#' @import searchConsoleR
 #' @importFrom rstudioapi insertText
 #' @importFrom readxl excel_sheets
 
