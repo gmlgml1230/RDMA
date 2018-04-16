@@ -27,7 +27,7 @@ RDMA <- function(){
 
   if(file.exists("sc.oauth")){
     sc_auth <- "OK"
-    searchConsoleR::scr_auth()
+    # searchConsoleR::scr_auth()
     website_url <- searchConsoleR::list_websites()$siteUrl
   } else {
     sc_auth <- "NO"
