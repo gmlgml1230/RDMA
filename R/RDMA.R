@@ -217,9 +217,7 @@ RDMA <- function(){
                      ),
                      dataTableOutput("gadata"),
                      hr(),
-                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download")),
-                     verbatimTextOutput("test"),
-                     actionButton(inputId = "test2", label = "testtest")
+                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download"))
                    )
       )
     )
@@ -669,10 +667,6 @@ RDMA <- function(){
       write.csv(ga_data.df, paste0(Sys.Date(),"_googleAnalytics.csv"), row.names = F)
       removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
-    })
-
-    observeEvent(input$test2, {
-      output$test <- renderText({ga_oauth})
     })
 
   }
