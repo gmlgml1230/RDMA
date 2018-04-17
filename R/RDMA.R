@@ -213,15 +213,11 @@ RDMA <- function(){
                          column(3,
                                 selectizeInput(inputId = "gasegment", label = "Segment", choices = if(is.null(ga_segment)){""} else {ga_segment$name}, multiple = T))
                        ),
-                       # shinyWidgets::materialSwitch("scfilter", "Filter", status="info"),
-                       # conditionalPanel(condition='input.scfilter==true', uiOutput("add_scfilter")),
                        actionButton(inputId = "gastart", label = "G&A Start")
                      ),
                      dataTableOutput("gadata"),
                      hr(),
-                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download")),
-                     verbatimTextOutput("test")
-                     # selectInput(inputId = "scdimension", label = "Dimension", choices = "", multiple = T),
+                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download"))
                    )
       )
     )
@@ -586,6 +582,8 @@ RDMA <- function(){
 
     ##### Google Analytics ---------------------------------------------------------------------------------------------------------------
 
+    ga_data.df <- reactiveValues()
+
     ga_auth_page <- function(){
       modalDialog(
         textInput(inputId = "gaclientid", label = "Client ID"),
@@ -593,6 +591,14 @@ RDMA <- function(){
         footer = tagList(actionButton(inputId = "gaauthok", label = "OK"),
                          modalButton("Cancel"))
       )
+    }
+
+    my_google_analytics <- function(id, date_range, metrics, dimensions, ga_id){
+      temp_df <- googleAnalyticsR::google_analytics(viewId = id,
+                                                    date_range = date_range,
+                                                    metrics = metrics,
+                                                    dimensions = dimensions,
+                                                    max = -1) %>% mutate(`Id Name` = ga_id$viewName[which(ga_id$viewId %in% id)])
     }
 
     observeEvent(input$gaRefresh, {
@@ -608,13 +614,15 @@ RDMA <- function(){
     })
 
     observeEvent(input$gaauthok, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+      ga_id <- reactiveValues()
       isolate({
         options("googleAuthR.client_id" = input$gaclientid)
         options("googleAuthR.client_secret" = input$gaclientsecret)
         googleAuthR::gar_auth("ga.httr-oauth")
         ga_auth <- "OK"
         updateActionButton(session, inputId = "gaRefresh", label = "Authorization : OK")
-        ga_id <- googleAnalyticsR::ga_account_list()
+        ga_id <<- googleAnalyticsR::ga_account_list()
         ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
         ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
         ga_segment <- googleAnalyticsR::ga_segment_list()$items
@@ -623,22 +631,40 @@ RDMA <- function(){
         updateSelectizeInput(session, "gadimension", choices = ga_dimension, options = list(maxOptions = length(ga_dimension)))
         updateSelectizeInput(session, "gasegment", choices = ga_segment$name, options = list(maxOptions = length(ga_segment$name)))
         removeModal()
+        removeModal()
+        showModal(text_page("완료 되었습니다"))
       })
+
     })
 
-    # segment 사용 시 : ga_segment$viewId[(which(ga_segment$name == input$gasegment))]
-    # account id 사용 시 : ga_id$accountId[(which(ga_id$viewName == input$gaid))]
-
-
+    # segment 사용 시 : ga_segment$viewId[(which(ga_segment$name %in% input$gasegment))]
+    # account id 사용 시 : ga_id$accountId[(which(ga_id$viewName %in% input$gaid))]
     observeEvent(input$garemove, {
       file.remove("ga.httr-oauth")
       ga_auth <- "NO"
       updateActionButton(session, inputId = "gaRefresh", label = "Authorization : NO")
     })
 
-    observe({
-      input$gametric
-      output$test <- renderText({input$gametric})
+    observeEvent(input$gastart, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+      isolate({
+        ga_data.df <<- lapply(X = ga_id$viewId[(which(ga_id$viewName %in% input$gaid))],
+                              FUN = my_google_analytics,
+                              date_range = c(input$gastartdate[1], input$gastartdate[2]),
+                              metrics = input$gametric,
+                              dimensions = input$gadimension,
+                              ga_id = ga_id) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+      })
+      removeModal()
+      showModal(text_page("다운로드가 완료되었습니다."))
+      output$gadata <- renderDataTable(ga_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+    })
+
+    observeEvent(input$gadownload, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+      write.csv(ga_data.df, paste0(Sys.Date(),"_googleAnalytics.csv"), row.names = F)
+      removeModal()
+      showModal(text_page("다운로드가 완료되었습니다."))
     })
 
   }
