@@ -605,7 +605,6 @@ RDMA <- function(){
 
     observeEvent(input$gaauthok, {
       showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      ga_id <- reactiveValues()
       isolate({
         options(googleAuthR.scopes.selected = c("https://www.googleapis.com/auth/analytics",
                                                 "https://www.googleapis.com/auth/analytics.readonly",
@@ -633,8 +632,6 @@ RDMA <- function(){
 
     })
 
-    # segment 사용 시 : ga_segment$viewId[(which(ga_segment$name %in% input$gasegment))]
-    # account id 사용 시 : ga_id$accountId[(which(ga_id$viewName %in% input$gaid))]
     observeEvent(input$garemove, {
       file.remove("ga.httr-oauth")
       ga_oauth <- "NO"
