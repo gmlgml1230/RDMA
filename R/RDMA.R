@@ -38,14 +38,14 @@ RDMA <- function(){
   }
 
   if(file.exists("ga.httr-oauth")){
-    ga_auth <- "OK"
-    gar_auth("ga.httr-oauth")
+    ga_oauth <- "OK"
+    googleAnalyticsR::ga_auth("ga.httr-oauth")
     ga_id <- googleAnalyticsR::ga_account_list()
     ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
     ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
     ga_segment <- googleAnalyticsR::ga_segment_list()$items
   } else {
-    ga_auth <- "NO"
+    ga_oauth <- "NO"
     ga_id <- NULL
     ga_metric <- NULL
     ga_dimension <- NULL
@@ -193,7 +193,7 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(6,
-                              actionButton(inputId = "gaRefresh", label = paste0("Authorization : ", ga_auth)),
+                              actionButton(inputId = "gaRefresh", label = paste0("Authorization : ", ga_oauth)),
                               actionButton(inputId = "garemove", label = "Remove Auth")
                        )
                      ),
@@ -601,28 +601,24 @@ RDMA <- function(){
                                                     max = -1) %>% mutate(`Id Name` = ga_id$viewName[which(ga_id$viewId %in% id)])
     }
 
-    observeEvent(input$gaRefresh, {
-      if(ga_auth == "NO"){
+    observeEvent(input$gaRefresh, {if(ga_oauth == "NO"){showModal(ga_auth_page())}})
+
+    observeEvent(input$gaauthok, {
+      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+      ga_id <- reactiveValues()
+      isolate({
         options(googleAuthR.scopes.selected = c("https://www.googleapis.com/auth/analytics",
                                                 "https://www.googleapis.com/auth/analytics.readonly",
                                                 "https://www.googleapis.com/auth/analytics.manage.users.readonly",
                                                 "https://www.googleapis.com/auth/analytics.edit",
                                                 "https://www.googleapis.com/auth/analytics.manage.users",
                                                 "https://www.googleapis.com/auth/analytics.provision"))
-        showModal(ga_auth_page())
-      }
-    })
-
-    observeEvent(input$gaauthok, {
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      ga_id <- reactiveValues()
-      isolate({
         options("googleAuthR.client_id" = input$gaclientid)
         options("googleAuthR.client_secret" = input$gaclientsecret)
-        googleAuthR::gar_auth("ga.httr-oauth")
-        ga_auth <- "OK"
+        googleAnalyticsR::ga_auth("ga.httr-oauth")
+        ga_oauth <- "OK"
         updateActionButton(session, inputId = "gaRefresh", label = "Authorization : OK")
-        ga_id <<- googleAnalyticsR::ga_account_list()
+        ga_id <- googleAnalyticsR::ga_account_list()
         ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
         ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
         ga_segment <- googleAnalyticsR::ga_segment_list()$items
@@ -641,7 +637,7 @@ RDMA <- function(){
     # account id 사용 시 : ga_id$accountId[(which(ga_id$viewName %in% input$gaid))]
     observeEvent(input$garemove, {
       file.remove("ga.httr-oauth")
-      ga_auth <- "NO"
+      ga_oauth <- "NO"
       updateActionButton(session, inputId = "gaRefresh", label = "Authorization : NO")
     })
 
