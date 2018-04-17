@@ -217,7 +217,9 @@ RDMA <- function(){
                      ),
                      dataTableOutput("gadata"),
                      hr(),
-                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download"))
+                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download")),
+                     verbatimTextOutput("test"),
+                     actionButton(inputId = "test2", label = "testtest")
                    )
       )
     )
@@ -333,6 +335,7 @@ RDMA <- function(){
 
     sc_data.df <- reactiveValues()
 
+
     my_search_analytics <- function(siteURL, startDate, endDate, dimensions, rowLimit, walk_data){
       temp_df <- search_analytics(siteURL = siteURL,
                                   startDate = startDate,
@@ -347,14 +350,16 @@ RDMA <- function(){
         searchConsoleR::scr_auth("sc.httr-oauth")
         website_url <- searchConsoleR::list_websites()$siteUrl
         updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
-        sc_auth <- "OK"
+        sc_auth <- reactiveValues()
+        sc_auth <<- "OK"
         updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
       }
     })
 
     observeEvent(input$scremove, {
       file.remove("sc.httr-oauth")
-      sc_auth <- "NO"
+      sc_auth <- reactiveValues()
+      sc_auth <<- "NO"
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
 
@@ -620,7 +625,7 @@ RDMA <- function(){
         options("googleAuthR.client_id" = input$gaclientid)
         options("googleAuthR.client_secret" = input$gaclientsecret)
         googleAnalyticsR::ga_auth("ga.httr-oauth")
-        ga_oauth <- "OK"
+        ga_oauth <<- "OK"
         updateActionButton(session, inputId = "gaRefresh", label = "Authorization : OK")
         ga_id <<- googleAnalyticsR::ga_account_list()
         ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
@@ -639,7 +644,8 @@ RDMA <- function(){
 
     observeEvent(input$garemove, {
       file.remove("ga.httr-oauth")
-      ga_oauth <- "NO"
+      ga_oauth <- reactiveValues()
+      ga_oauth <<- "NO"
       updateActionButton(session, inputId = "gaRefresh", label = "Authorization : NO")
     })
 
@@ -663,6 +669,10 @@ RDMA <- function(){
       write.csv(ga_data.df, paste0(Sys.Date(),"_googleAnalytics.csv"), row.names = F)
       removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
+    })
+
+    observeEvent(input$test2, {
+      output$test <- renderText({ga_oauth})
     })
 
   }
