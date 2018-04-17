@@ -19,4 +19,6 @@ Imports: shiny,
     shinyWidgets,
     shinyAce,
     readxl,
-    searchConsoleR
+    searchConsoleR,
+    googleAuthR,
+    googleAnalyticsR

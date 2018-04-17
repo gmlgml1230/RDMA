@@ -9,6 +9,8 @@
 #' @import shinyWidgets
 #' @import shinyAce
 #' @import searchConsoleR
+#' @import googleAuthR
+#' @import googleAnalyticsR
 #' @importFrom rstudioapi insertText
 #' @importFrom readxl excel_sheets
 
@@ -21,34 +23,33 @@ RDMA <- function(){
   shiny.maxRequestSize = 30 * 1024 ^ 2
 
   if(file.exists(".google.auth.RData")){
-    Ad_auth <- "OK"
+    ad_auth <- "OK"
   } else {
-    Ad_auth <- "NO"
+    ad_auth <- "NO"
   }
 
-  if(file.exists("sc.oauth")){
+  if(file.exists("sc.httr-oauth")){
     sc_auth <- "OK"
-    # searchConsoleR::scr_auth()
+    gar_auth("sc.httr-oauth")
     website_url <- searchConsoleR::list_websites()$siteUrl
   } else {
     sc_auth <- "NO"
     website_url <- NULL
   }
 
-
-
-  # dplyr package Check
-  if(!isNamespaceLoaded("dplyr")){attachNamespace("dplyr")}
-
-  # DataFrame Chack
-  if(length(ls()) == 0){
-    df_val <- NULL
+  if(file.exists("ga.httr-oauth")){
+    ga_auth <- "OK"
+    gar_auth("ga.httr-oauth")
+    ga_id <- googleAnalyticsR::ga_account_list()
+    ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
+    ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
+    ga_segment <- googleAnalyticsR::ga_segment_list()$items
   } else {
-    df_val <- ls()[unlist(lapply(ls(), FUN = function(val){return(any(class(eval(parse(text = val))) %in% c("data.frame", "tibble", "tbl_df")))}))]
-    # for(i in ls()){
-    #   # eval(parse(text = i)) 문자를 변수로 변환 eval : 표현식을 평가, parse : 문자열을 표현식으로 변환
-    #   mydata <- any(class(eval(parse(text = i))) %in% c("data.frame", "tibble", "tbl_df")) == TRUE
-    # }
+    ga_auth <- "NO"
+    ga_id <- NULL
+    ga_metric <- NULL
+    ga_dimension <- NULL
+    ga_segment <- NULL
   }
 
 
@@ -161,7 +162,7 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(8,
-                              actionButton(inputId = "Refresh", label = paste0("Authorization : ", Ad_auth)),
+                              actionButton(inputId = "Refresh", label = paste0("Authorization : ", ad_auth)),
                               actionButton(inputId = "adremove", label = "Remove Auth"))
                      ),
                      hr(),
@@ -183,7 +184,46 @@ RDMA <- function(){
                      dataTableOutput("addata"),
                      hr(),
                      actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download"))
-                   ))
+                   )
+      ),
+
+      ##### Google Analytics ---------------------------------------------------------------------------------------------------------------
+
+      miniTabPanel(title = "Google Analytics",
+                   miniContentPanel(
+                     fluidRow(
+                       column(6,
+                              actionButton(inputId = "gaRefresh", label = paste0("Authorization : ", ga_auth)),
+                              actionButton(inputId = "garemove", label = "Remove Auth")
+                       )
+                     ),
+                     hr(),
+                     wellPanel(
+                       fluidRow(
+                         column(3,
+                                dateRangeInput(inputId = "gastartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date()))
+                       ),
+                       fluidRow(
+                         column(3,
+                                selectizeInput(inputId = "gaid", label = "Id", choices = if(is.null(ga_id)){""} else {ga_id$viewName}, multiple = T)),
+                         column(3,
+                                selectizeInput(inputId = "gametric", label = "Metric", choices = if(is.null(ga_metric)){""} else {ga_metric}, multiple = T)),
+                         column(3,
+                                selectizeInput(inputId = "gadimension", label = "Dimension", choices = if(is.null(ga_dimension)){""} else {ga_dimension}, multiple = T)),
+                         column(3,
+                                selectizeInput(inputId = "gasegment", label = "Segment", choices = if(is.null(ga_segment)){""} else {ga_segment$name}, multiple = T))
+                       ),
+                       # shinyWidgets::materialSwitch("scfilter", "Filter", status="info"),
+                       # conditionalPanel(condition='input.scfilter==true', uiOutput("add_scfilter")),
+                       actionButton(inputId = "gastart", label = "G&A Start")
+                     ),
+                     dataTableOutput("gadata"),
+                     hr(),
+                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download")),
+                     verbatimTextOutput("test")
+                     # selectInput(inputId = "scdimension", label = "Dimension", choices = "", multiple = T),
+                   )
+      )
     )
   )
 
@@ -308,7 +348,8 @@ RDMA <- function(){
 
     observeEvent(input$scRefresh, {
       if(sc_auth == "NO"){
-        searchConsoleR::scr_auth()
+        options("googleAuthR.scopes.selected" = getOption("searchConsoleR.scope"))
+        googleAuthR::gar_auth("sc.httr-oauth")
         website_url <- searchConsoleR::list_websites()$siteUrl
         updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
         sc_auth <- "OK"
@@ -317,8 +358,7 @@ RDMA <- function(){
     })
 
     observeEvent(input$scremove, {
-      file.remove("sc.oauth")
-      file.remove(".httr-oauth")
+      file.remove("sc.httr-oauth")
       sc_auth <- "NO"
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
@@ -477,7 +517,7 @@ RDMA <- function(){
       )
     }
 
-    observeEvent(input$Refresh, {if(Ad_auth == "NO"){showModal(auth_page())} else {}})
+    observeEvent(input$Refresh, {if(ad_auth == "NO"){showModal(auth_page())} else {}})
 
     observeEvent(input$authok, {
       removeModal()
@@ -505,7 +545,7 @@ RDMA <- function(){
 
     observeEvent(input$adremove, {
       file.remove(".google.auth.RData")
-      Ad_auth <- "NO"
+      ad_auth <- "NO"
       updateActionButton(session, inputId = "Refresh", label = "Authorization : NO")
     })
 
@@ -544,6 +584,63 @@ RDMA <- function(){
       showModal(text_page("다운로드가 완료되었습니다."))
     })
 
+
+    ##### Google Analytics ---------------------------------------------------------------------------------------------------------------
+
+    ga_auth_page <- function(){
+      modalDialog(
+        textInput(inputId = "gaclientid", label = "Client ID"),
+        textInput(inputId = "gaclientsecret", label = "Client Secret"),
+        footer = tagList(actionButton(inputId = "gaauthok", label = "OK"),
+                         modalButton("Cancel"))
+      )
+    }
+
+    observeEvent(input$gaRefresh, {
+      if(ga_auth == "NO"){
+        options(googleAuthR.scopes.selected = c("https://www.googleapis.com/auth/analytics",
+                                                "https://www.googleapis.com/auth/analytics.readonly",
+                                                "https://www.googleapis.com/auth/analytics.manage.users.readonly",
+                                                "https://www.googleapis.com/auth/analytics.edit",
+                                                "https://www.googleapis.com/auth/analytics.manage.users",
+                                                "https://www.googleapis.com/auth/analytics.provision"))
+        showModal(ga_auth_page())
+      }
+    })
+
+    observeEvent(input$gaauthok, {
+      isolate({
+        options("googleAuthR.client_id" = input$gaclientid)
+        options("googleAuthR.client_secret" = input$gaclientsecret)
+        googleAuthR::gar_auth("ga.httr-oauth")
+        ga_auth <- "OK"
+        updateActionButton(session, inputId = "gaRefresh", label = "Authorization : OK")
+        ga_id <- googleAnalyticsR::ga_account_list()
+        ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
+        ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
+        ga_segment <- googleAnalyticsR::ga_segment_list()$items
+        updateSelectizeInput(session, "gaid", choices = ga_id$viewName, options = list(maxOptions = length(ga_id$viewName)))
+        updateSelectizeInput(session, "gametric", choices = ga_metric, options = list(maxOptions = length(ga_metric)))
+        updateSelectizeInput(session, "gadimension", choices = ga_dimension, options = list(maxOptions = length(ga_dimension)))
+        updateSelectizeInput(session, "gasegment", choices = ga_segment$name, options = list(maxOptions = length(ga_segment$name)))
+        removeModal()
+      })
+    })
+
+    # segment 사용 시 : ga_segment$viewId[(which(ga_segment$name == input$gasegment))]
+    # account id 사용 시 : ga_id$accountId[(which(ga_id$viewName == input$gaid))]
+
+
+    observeEvent(input$garemove, {
+      file.remove("ga.httr-oauth")
+      ga_auth <- "NO"
+      updateActionButton(session, inputId = "gaRefresh", label = "Authorization : NO")
+    })
+
+    observe({
+      input$gametric
+      output$test <- renderText({input$gametric})
+    })
 
   }
 
