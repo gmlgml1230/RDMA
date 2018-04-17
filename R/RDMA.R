@@ -601,7 +601,12 @@ RDMA <- function(){
                                                     max = -1) %>% mutate(`Id Name` = ga_id$viewName[which(ga_id$viewId %in% id)])
     }
 
-    observeEvent(input$gaRefresh, {if(ga_oauth == "NO"){showModal(ga_auth_page())}})
+    observeEvent(input$gaRefresh, {
+      if(ga_oauth == "NO"){
+        ga_id <- reactiveValues()
+        showModal(ga_auth_page())
+      }
+    })
 
     observeEvent(input$gaauthok, {
       showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
@@ -617,7 +622,7 @@ RDMA <- function(){
         googleAnalyticsR::ga_auth("ga.httr-oauth")
         ga_oauth <- "OK"
         updateActionButton(session, inputId = "gaRefresh", label = "Authorization : OK")
-        ga_id <- googleAnalyticsR::ga_account_list()
+        ga_id <<- googleAnalyticsR::ga_account_list()
         ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
         ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
         ga_segment <- googleAnalyticsR::ga_segment_list()$items
@@ -649,7 +654,7 @@ RDMA <- function(){
                               ga_id = ga_id) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
       })
       removeModal()
-      showModal(text_page("다운로드가 완료되었습니다."))
+      showModal(text_page("GA Data 추출 완료"))
       output$gadata <- renderDataTable(ga_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
