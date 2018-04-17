@@ -348,10 +348,7 @@ RDMA <- function(){
 
     observeEvent(input$scRefresh, {
       if(sc_auth == "NO"){
-        options("googleAuthR.scopes.selected" = getOption("searchConsoleR.scope"))
-        options(googleAuthR.webapp.client_id = getOption("searchConsoleR.webapp.client_id"))
-        options(googleAuthR.webapp.client_secret = getOption("searchConsoleR.webapp.client_secret"))
-        googleAuthR::gar_auth("sc.httr-oauth")
+        searchConsoleR::scr_auth("sc.httr-oauth")
         website_url <- searchConsoleR::list_websites()$siteUrl
         updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
         sc_auth <- "OK"
