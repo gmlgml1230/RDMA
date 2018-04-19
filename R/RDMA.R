@@ -230,7 +230,7 @@ RDMA <- function(){
         modalDialog(
           text,
           footer = tagList(
-            modalButton("Cancel")
+            modalButton(button)
           )
         )
       } else {
