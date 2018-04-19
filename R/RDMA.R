@@ -31,26 +31,50 @@ RDMA <- function(){
     }
   }
 
-  if(file.exists("sc.httr-oauth")){
-    tryCatch({gar_auth("sc.httr-oauth")
-      website_url <- searchConsoleR::list_websites()$siteUrl
-    },
-    error = function(e){
-      file.remove("sc.httr-oauth")
-    })
+  oauth_trycatch <- function(auth_file, exr){
+    if(file.exists(auth_file)){
+      tryCatch({
+        exr
+      },
+      error = function(e){
+        file.remove(auth_file)
+      })
+    }
   }
 
-  if(file.exists("ga.httr-oauth")){
-    tryCatch({googleAnalyticsR::ga_auth("ga.httr-oauth")
-      ga_id <- googleAnalyticsR::ga_account_list()
-      ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
-      ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
-      ga_segment <- googleAnalyticsR::ga_segment_list()$items
-    },
-    error = function(e){
-      file.remove("ga.httr-oauth")
-    })
-  }
+  oauth_trycatch("sc.httr-oauth", {
+    gar_auth("sc.httr-oauth")
+    website_url <- searchConsoleR::list_websites()$siteUrl
+  })
+
+  oauth_trycatch("ga.httr-oauth", {
+    googleAnalyticsR::ga_auth("ga.httr-oauth")
+    ga_id <- googleAnalyticsR::ga_account_list()
+    ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
+    ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
+    ga_segment <- googleAnalyticsR::ga_segment_list()$items
+  })
+
+  # if(file.exists("sc.httr-oauth")){
+  #   tryCatch({gar_auth("sc.httr-oauth")
+  #     website_url <- searchConsoleR::list_websites()$siteUrl
+  #   },
+  #   error = function(e){
+  #     file.remove("sc.httr-oauth")
+  #   })
+  # }
+
+  # if(file.exists("ga.httr-oauth")){
+  #   tryCatch({googleAnalyticsR::ga_auth("ga.httr-oauth")
+  #     ga_id <- googleAnalyticsR::ga_account_list()
+  #     ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
+  #     ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
+  #     ga_segment <- googleAnalyticsR::ga_segment_list()$items
+  #   },
+  #   error = function(e){
+  #     file.remove("ga.httr-oauth")
+  #   })
+  # }
 
 
   ##### UI -----------------------------------------------------------------------------------------------------------------------------
