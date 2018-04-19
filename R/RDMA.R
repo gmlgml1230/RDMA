@@ -20,36 +20,36 @@
 RDMA <- function(){
 
   options(httr_oauth_cache=T)
-  shiny.maxRequestSize = 30 * 1024 ^ 2
+  # Shiny에서 5MB의 제한을 잡아놓은걸 30MB로 늘린 것
+  options(shiny.maxRequestSize = 30 * 1024 ^ 2)
 
-  if(file.exists(".google.auth.RData")){
-    ad_auth <- "OK"
-  } else {
-    ad_auth <- "NO"
+  oauth_ck <- function(auth_file){
+    if(file.exists(auth_file)){
+      return("OK")
+    } else {
+      return("NO")
+    }
   }
 
   if(file.exists("sc.httr-oauth")){
-    sc_auth <- "OK"
-    gar_auth("sc.httr-oauth")
-    website_url <- searchConsoleR::list_websites()$siteUrl
-  } else {
-    sc_auth <- "NO"
-    website_url <- NULL
+    tryCatch({gar_auth("sc.httr-oauth")
+      website_url <- searchConsoleR::list_websites()$siteUrl
+    },
+    error = function(e){
+      file.remove("sc.httr-oauth")
+    })
   }
 
   if(file.exists("ga.httr-oauth")){
-    ga_oauth <- "OK"
-    googleAnalyticsR::ga_auth("ga.httr-oauth")
-    ga_id <- googleAnalyticsR::ga_account_list()
-    ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
-    ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
-    ga_segment <- googleAnalyticsR::ga_segment_list()$items
-  } else {
-    ga_oauth <- "NO"
-    ga_id <- NULL
-    ga_metric <- NULL
-    ga_dimension <- NULL
-    ga_segment <- NULL
+    tryCatch({googleAnalyticsR::ga_auth("ga.httr-oauth")
+      ga_id <- googleAnalyticsR::ga_account_list()
+      ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
+      ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
+      ga_segment <- googleAnalyticsR::ga_segment_list()$items
+    },
+    error = function(e){
+      file.remove("ga.httr-oauth")
+    })
   }
 
 
@@ -95,7 +95,7 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(6,
-                              actionButton(inputId = "scRefresh", label = paste0("Authorization : ", sc_auth)),
+                              actionButton(inputId = "scRefresh", label = paste0("Authorization : ", oauth_ck("sc.httr-oauth"))),
                               actionButton(inputId = "scremove", label = "Remove Auth")
                        )
                      ),
@@ -107,7 +107,7 @@ RDMA <- function(){
                        ),
                        fluidRow(
                          column(3,
-                                selectizeInput(inputId = "scwebsite", label = "Web Site URL", choices = if(is.null(website_url)){""} else {website_url}, multiple = T)),
+                                selectizeInput(inputId = "scwebsite", label = "Web Site URL", choices = if(!exists("website_url")){""} else {website_url}, multiple = T)),
                          column(3,
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
@@ -118,7 +118,6 @@ RDMA <- function(){
                      dataTableOutput("scdata"),
                      hr(),
                      actionButton(inputId = "scdownload", label = "Download", icon = icon("cloud-download"))
-                     # selectInput(inputId = "scdimension", label = "Dimension", choices = "", multiple = T),
                    )
       ),
 
@@ -152,7 +151,6 @@ RDMA <- function(){
                      dataTableOutput("omdata"),
                      hr(),
                      actionButton(inputId = "omdownload", label = "Download", icon = icon("cloud-download"))
-                     # downloadButton(outputId = "om_data.csv")
                    )
       ),
 
@@ -162,7 +160,7 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(8,
-                              actionButton(inputId = "Refresh", label = paste0("Authorization : ", ad_auth)),
+                              actionButton(inputId = "Refresh", label = paste0("Authorization : ", oauth_ck(".google.auth.RData"))),
                               actionButton(inputId = "adremove", label = "Remove Auth"))
                      ),
                      hr(),
@@ -193,7 +191,7 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(6,
-                              actionButton(inputId = "gaRefresh", label = paste0("Authorization : ", ga_oauth)),
+                              actionButton(inputId = "gaRefresh", label = paste0("Authorization : ", oauth_ck("ga.httr-oauth"))),
                               actionButton(inputId = "garemove", label = "Remove Auth")
                        )
                      ),
@@ -205,13 +203,13 @@ RDMA <- function(){
                        ),
                        fluidRow(
                          column(3,
-                                selectizeInput(inputId = "gaid", label = "Id", choices = if(is.null(ga_id)){""} else {ga_id$viewName}, multiple = T)),
+                                selectizeInput(inputId = "gaid", label = "Id", choices = if(!exists("ga_id")){""} else {ga_id$viewName}, multiple = T)),
                          column(3,
-                                selectizeInput(inputId = "gametric", label = "Metric", choices = if(is.null(ga_metric)){""} else {ga_metric}, multiple = T)),
+                                selectizeInput(inputId = "gametric", label = "Metric", choices = if(!exists("ga_metric")){""} else {ga_metric}, multiple = T)),
                          column(3,
-                                selectizeInput(inputId = "gadimension", label = "Dimension", choices = if(is.null(ga_dimension)){""} else {ga_dimension}, multiple = T)),
+                                selectizeInput(inputId = "gadimension", label = "Dimension", choices = if(!exists("ga_dimension")){""} else {ga_dimension}, multiple = T)),
                          column(3,
-                                selectizeInput(inputId = "gasegment", label = "Segment", choices = if(is.null(ga_segment)){""} else {ga_segment$name}, multiple = T))
+                                selectizeInput(inputId = "gasegment", label = "Segment", choices = if(!exists("ga_segment")){""} else {ga_segment$name}, multiple = T))
                        ),
                        actionButton(inputId = "gastart", label = "G&A Start")
                      ),
@@ -226,10 +224,8 @@ RDMA <- function(){
   ##### SERVER -------------------------------------------------------------------------------------------------------------------------
 
   server <- function(input, output, session) {
-    # Shiny에서 5MB의 제한을 잡아놓은걸 30MB로 늘린 것
-    options(shiny.maxRequestSize = 30 * 1024 ^ 2)
 
-    text_page <- function(text, buffer = FALSE){
+    text_page <- function(text, buffer = FALSE, button = "Cancel"){
       if(buffer == FALSE){
         modalDialog(
           text,
@@ -344,20 +340,16 @@ RDMA <- function(){
     }
 
     observeEvent(input$scRefresh, {
-      if(sc_auth == "NO"){
+      if(!file.exists("sc.httr-oauth")){
         searchConsoleR::scr_auth("sc.httr-oauth")
         website_url <- searchConsoleR::list_websites()$siteUrl
         updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
-        sc_auth <- reactiveValues()
-        sc_auth <<- "OK"
         updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
       }
     })
 
     observeEvent(input$scremove, {
       file.remove("sc.httr-oauth")
-      sc_auth <- reactiveValues()
-      sc_auth <<- "NO"
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
 
@@ -379,7 +371,7 @@ RDMA <- function(){
 
     observeEvent(input$scdownload, {
       showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(sc_data.df, paste0(Sys.Date(),"_SearchConsole.csv"), row.names = F)
+      write.csv(sc_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_SearchConsole.csv"), row.names = F)
       removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
     })
@@ -388,9 +380,6 @@ RDMA <- function(){
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
     omni_data.df <- reactiveValues()
-    # om_id <- reactiveValues()
-    # om_pw <- reactiveValues()
-
 
     if(file.exists(".om.info.RData")){
       load(".om.info.RData")
@@ -434,7 +423,7 @@ RDMA <- function(){
         RSiteCatalyst::SCAuth(isolate({input$om_id}), isolate({input$om_pw}))
         updateSelectizeInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
         removeModal()
-        showModal(text_page("완료 되었습니다"))
+        showModal(text_page("완료 되었습니다", button = "OK"))
       })
     })
 
@@ -485,7 +474,7 @@ RDMA <- function(){
 
     observeEvent(input$omdownload, {
       showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(omni_data.df, paste0(Sys.Date(),"_omniture.csv"), row.names = F)
+      write.csv(omni_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_omniture.csv"), row.names = F)
       removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
     })
@@ -515,7 +504,7 @@ RDMA <- function(){
       )
     }
 
-    observeEvent(input$Refresh, {if(ad_auth == "NO"){showModal(auth_page())} else {}})
+    observeEvent(input$Refresh, {if(!file.exists(".google.auth.RData")){showModal(auth_page())} else {}})
 
     observeEvent(input$authok, {
       removeModal()
@@ -543,16 +532,12 @@ RDMA <- function(){
 
     observeEvent(input$adremove, {
       file.remove(".google.auth.RData")
-      ad_auth <- "NO"
       updateActionButton(session, inputId = "Refresh", label = "Authorization : NO")
     })
 
     observe(
       updateSelectInput(session, "Ad_metricname", choices = RAdwords::metrics(as.character(input$reportname)))
     )
-    # observeEvent(input$adenter, {
-    #   updateSelectInput(session, "Ad_metricname", choices = RAdwords::metrics(as.character(isolate({input$reportname}))))
-    # })
 
     observeEvent(input$adstart, {
       body <- isolate({
@@ -577,7 +562,7 @@ RDMA <- function(){
 
     observeEvent(input$addownload, {
       showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(Ad_data.df, paste0(Sys.Date(),"_adwords.csv"), row.names = F)
+      write.csv(Ad_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_adwords.csv"), row.names = F)
       removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
     })
@@ -605,7 +590,7 @@ RDMA <- function(){
     }
 
     observeEvent(input$gaRefresh, {
-      if(ga_oauth == "NO"){
+      if(!file.exists("ga.httr-oauth")){
         ga_id <- reactiveValues()
         showModal(ga_auth_page())
       }
@@ -623,7 +608,6 @@ RDMA <- function(){
         options("googleAuthR.client_id" = input$gaclientid)
         options("googleAuthR.client_secret" = input$gaclientsecret)
         googleAnalyticsR::ga_auth("ga.httr-oauth")
-        ga_oauth <<- "OK"
         updateActionButton(session, inputId = "gaRefresh", label = "Authorization : OK")
         ga_id <<- googleAnalyticsR::ga_account_list()
         ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
@@ -642,8 +626,6 @@ RDMA <- function(){
 
     observeEvent(input$garemove, {
       file.remove("ga.httr-oauth")
-      ga_oauth <- reactiveValues()
-      ga_oauth <<- "NO"
       updateActionButton(session, inputId = "gaRefresh", label = "Authorization : NO")
     })
 
@@ -664,7 +646,7 @@ RDMA <- function(){
 
     observeEvent(input$gadownload, {
       showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(ga_data.df, paste0(Sys.Date(),"_googleAnalytics.csv"), row.names = F)
+      write.csv(ga_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_googleAnalytics.csv"), row.names = F)
       removeModal()
       showModal(text_page("다운로드가 완료되었습니다."))
     })
