@@ -31,6 +31,14 @@ RDMA <- function(){
     }
   }
 
+  data_ck <- function(df_name, text_page, exr){
+    if(!is.reactivevalues(df_name)){
+      exr
+    } else {
+      showModal(text_page("데이터 추출 먼저 해야합니다."))
+    }
+  }
+
   oauth_trycatch <- function(auth_file, exr){
     if(file.exists(auth_file)){
       tryCatch({
@@ -54,27 +62,6 @@ RDMA <- function(){
     ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
     ga_segment <- googleAnalyticsR::ga_segment_list()$items
   })
-
-  # if(file.exists("sc.httr-oauth")){
-  #   tryCatch({gar_auth("sc.httr-oauth")
-  #     website_url <- searchConsoleR::list_websites()$siteUrl
-  #   },
-  #   error = function(e){
-  #     file.remove("sc.httr-oauth")
-  #   })
-  # }
-
-  # if(file.exists("ga.httr-oauth")){
-  #   tryCatch({googleAnalyticsR::ga_auth("ga.httr-oauth")
-  #     ga_id <- googleAnalyticsR::ga_account_list()
-  #     ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
-  #     ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
-  #     ga_segment <- googleAnalyticsR::ga_segment_list()$items
-  #   },
-  #   error = function(e){
-  #     file.remove("ga.httr-oauth")
-  #   })
-  # }
 
 
   ##### UI -----------------------------------------------------------------------------------------------------------------------------
@@ -249,7 +236,7 @@ RDMA <- function(){
 
   server <- function(input, output, session) {
 
-    text_page <- function(text, buffer = FALSE, button = "Cancel"){
+    text_page <- function(text, buffer = FALSE, button = "OK"){
       if(buffer == FALSE){
         modalDialog(
           text,
@@ -263,10 +250,9 @@ RDMA <- function(){
 
     }
 
-    variable_name <- function(name){eval(parse(text=paste0("`", name,"`")))}
-
     ##### Data Preparation TAP -----------------------------------------------------------------------------------------------------------
 
+    # variable_name <- function(name){eval(parse(text=paste0("`", name,"`")))}
 
     # # File Upload
     # selectfile <- reactive({
@@ -394,10 +380,12 @@ RDMA <- function(){
     })
 
     observeEvent(input$scdownload, {
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(sc_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_SearchConsole.csv"), row.names = F)
-      removeModal()
-      showModal(text_page("다운로드가 완료되었습니다."))
+      data_ck(sc_data.df, text_page, {
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        write.csv(sc_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_SearchConsole.csv"), row.names = F)
+        removeModal()
+        showModal(text_page("다운로드가 완료되었습니다."))
+      })
     })
 
 
@@ -447,7 +435,7 @@ RDMA <- function(){
         RSiteCatalyst::SCAuth(isolate({input$om_id}), isolate({input$om_pw}))
         updateSelectizeInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
         removeModal()
-        showModal(text_page("완료 되었습니다", button = "OK"))
+        showModal(text_page("완료 되었습니다"))
       })
     })
 
@@ -497,10 +485,12 @@ RDMA <- function(){
     })
 
     observeEvent(input$omdownload, {
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(omni_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_omniture.csv"), row.names = F)
-      removeModal()
-      showModal(text_page("다운로드가 완료되었습니다."))
+      data_ck(omni_data.df, text_page, {
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        write.csv(omni_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_omniture.csv"), row.names = F)
+        removeModal()
+        showModal(text_page("다운로드가 완료되었습니다."))
+      })
     })
 
 
@@ -585,10 +575,12 @@ RDMA <- function(){
 
 
     observeEvent(input$addownload, {
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(Ad_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_adwords.csv"), row.names = F)
-      removeModal()
-      showModal(text_page("다운로드가 완료되었습니다."))
+      data_ck(ga_data.df, text_page, {
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        write.csv(Ad_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_adwords.csv"), row.names = F)
+        removeModal()
+        showModal(text_page("다운로드가 완료되었습니다."))
+      })
     })
 
 
@@ -669,10 +661,13 @@ RDMA <- function(){
     })
 
     observeEvent(input$gadownload, {
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      write.csv(ga_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_googleAnalytics.csv"), row.names = F)
-      removeModal()
-      showModal(text_page("다운로드가 완료되었습니다."))
+      data_ck(ga_data.df, text_page, {
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        write.csv(ga_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_googleAnalytics.csv"), row.names = F)
+        removeModal()
+        showModal(text_page("다운로드가 완료되었습니다."))
+      })
+
     })
 
   }
