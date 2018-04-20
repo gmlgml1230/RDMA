@@ -50,6 +50,15 @@ RDMA <- function(){
     }
   }
 
+  element_null_ck <- function(..., element_name, text_page, exr){
+    null_ck <- vapply(list(...), is.null, TRUE)
+    if(any(null_ck)){
+      showModal(text_page(paste0(paste0(element_name[null_ck], collapse = " , "), " 을(를) 선택해야 합니다.")))
+    } else {
+      exr
+    }
+  }
+
   oauth_trycatch("sc.httr-oauth", {
     gar_auth("sc.httr-oauth")
     website_url <- searchConsoleR::list_websites()$siteUrl
@@ -117,7 +126,7 @@ RDMA <- function(){
                                 dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date()))
                        ),
                        fluidRow(
-                         column(3,
+                         column(9,
                                 selectizeInput(inputId = "scwebsite", label = "Web Site URL", choices = if(!exists("website_url")){""} else {website_url}, multiple = T)),
                          column(3,
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
@@ -192,7 +201,8 @@ RDMA <- function(){
                      ),
                      dataTableOutput("addata"),
                      hr(),
-                     actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download"))
+                     actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download")),
+                     verbatimTextOutput("test")
                    )
       ),
 
@@ -364,19 +374,21 @@ RDMA <- function(){
     })
 
     observeEvent(input$scstart, {
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      sc_data.df <<- isolate({
-        lapply(X = input$scwebsite,
-               FUN = my_search_analytics,
-               startDate = input$scstartdate[1],
-               endDate = input$scstartdate[2],
-               dimensions = input$scdimension,
-               rowLimit = 5000,
-               walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+      element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        sc_data.df <<- isolate({
+          lapply(X = input$scwebsite,
+                 FUN = my_search_analytics,
+                 startDate = input$scstartdate[1],
+                 endDate = input$scstartdate[2],
+                 dimensions = input$scdimension,
+                 rowLimit = 5000,
+                 walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+        })
+        removeModal()
+        showModal(text_page("S&C Data 추출 완료"))
+        output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
       })
-      removeModal()
-      showModal(text_page("S&C Data 추출 완료"))
-      output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
     observeEvent(input$scdownload, {
@@ -465,23 +477,25 @@ RDMA <- function(){
     })
 
     observeEvent(input$omstart, {
-      if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      omni_data.df <<- isolate({lapply(X = input$countryname,
-                                       FUN = QueueTrended,
-                                       date.from = input$omstartdate[1],
-                                       date.to = input$omstartdate[2],
-                                       metrics = input$metricname,
-                                       elements = input$elementname,
-                                       top = 50000,
-                                       start = 0,
-                                       segment.id = om_info$om_list$segmentname_id[which(input$segmentname == om_info$om_list$segmentname_name)],
-                                       enqueueOnly = FALSE,
-                                       max.attempts = 1000) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+      element_null_ck(input$countryname, input$metricname, input$elementname, element_name = c("Country", "Metric Name", "Element Name"), text_page = text_page, exr = {
+        if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        omni_data.df <<- isolate({lapply(X = input$countryname,
+                                         FUN = QueueTrended,
+                                         date.from = input$omstartdate[1],
+                                         date.to = input$omstartdate[2],
+                                         metrics = input$metricname,
+                                         elements = input$elementname,
+                                         top = 50000,
+                                         start = 0,
+                                         segment.id = om_info$om_list$segmentname_id[which(input$segmentname == om_info$om_list$segmentname_name)],
+                                         enqueueOnly = FALSE,
+                                         max.attempts = 1000) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+        })
+        removeModal()
+        showModal(text_page("옴니츄어 추출 완료"))
+        output$omdata <- renderDataTable(omni_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
       })
-      removeModal()
-      showModal(text_page("옴니츄어 추출 완료"))
-      output$omdata <- renderDataTable(omni_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
     observeEvent(input$omdownload, {
@@ -554,25 +568,30 @@ RDMA <- function(){
     )
 
     observeEvent(input$adstart, {
-      body <- isolate({
-        statement(select = input$Ad_metricname,
-                  report = input$reportname,
-                  start = input$adstartdate[1],
-                  end = input$adstartdate[2])
-      })
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      isolate({
-        Ad_clientcustomerId <- unlist(strsplit(input$clientcustomerId, ","))
-        Ad_data.df <<- lapply(X = Ad_clientcustomerId,
-                              FUN = RAdwords::getData,
-                              google_auth = google_auth,
-                              statement = body) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
-      })
-      removeModal()
-      showModal(text_page("애드워즈 추출 완료"))
-      output$addata <- renderDataTable(Ad_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+      element_name <- c("Metric Name", "Client Customer Id")
+      null_ck <- c(is.null(input$Ad_metricname), input$clientcustomerId == "")
+      if(any(null_ck)){
+        showModal(text_page(paste0(paste0(element_name[null_ck], collapse = " , "), " 을(를) 선택해야 합니다.")))
+      } else {
+        body <- isolate({
+          statement(select = input$Ad_metricname,
+                    report = input$reportname,
+                    start = input$adstartdate[1],
+                    end = input$adstartdate[2])
+        })
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        isolate({
+          Ad_clientcustomerId <- unlist(strsplit(input$clientcustomerId, ","))
+          Ad_data.df <<- lapply(X = Ad_clientcustomerId,
+                                FUN = RAdwords::getData,
+                                google_auth = google_auth,
+                                statement = body) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+        })
+        removeModal()
+        showModal(text_page("애드워즈 추출 완료"))
+        output$addata <- renderDataTable(Ad_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+      }
     })
-
 
     observeEvent(input$addownload, {
       data_ck(ga_data.df, text_page, {
@@ -581,6 +600,11 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("다운로드가 완료되었습니다."))
       })
+    })
+
+    observe({output$test <- renderText({
+      temp<-c(is.null(input$Ad_metricname), input$clientcustomerId =="")
+    })
     })
 
 
@@ -646,18 +670,20 @@ RDMA <- function(){
     })
 
     observeEvent(input$gastart, {
-      showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-      isolate({
-        ga_data.df <<- lapply(X = ga_id$viewId[(which(ga_id$viewName %in% input$gaid))],
-                              FUN = my_google_analytics,
-                              date_range = c(input$gastartdate[1], input$gastartdate[2]),
-                              metrics = input$gametric,
-                              dimensions = input$gadimension,
-                              ga_id = ga_id) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+      element_null_ck(input$gaid, input$gametric, input$gadimension, element_name = c("Id", "Metric", "Dimension"), text_page = text_page, exr = {
+        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        isolate({
+          ga_data.df <<- lapply(X = ga_id$viewId[(which(ga_id$viewName %in% input$gaid))],
+                                FUN = my_google_analytics,
+                                date_range = c(input$gastartdate[1], input$gastartdate[2]),
+                                metrics = input$gametric,
+                                dimensions = input$gadimension,
+                                ga_id = ga_id) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+        })
+        removeModal()
+        showModal(text_page("GA Data 추출 완료"))
+        output$gadata <- renderDataTable(ga_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
       })
-      removeModal()
-      showModal(text_page("GA Data 추출 완료"))
-      output$gadata <- renderDataTable(ga_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
     observeEvent(input$gadownload, {
