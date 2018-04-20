@@ -375,6 +375,7 @@ RDMA <- function(){
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        gar_auth("sc.httr-oauth")
         sc_data.df <<- isolate({
           lapply(X = input$scwebsite,
                  FUN = my_search_analytics,
