@@ -201,8 +201,7 @@ RDMA <- function(){
                      ),
                      dataTableOutput("addata"),
                      hr(),
-                     actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download")),
-                     verbatimTextOutput("test")
+                     actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download"))
                    )
       ),
 
@@ -600,11 +599,6 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("다운로드가 완료되었습니다."))
       })
-    })
-
-    observe({output$test <- renderText({
-      temp<-c(is.null(input$Ad_metricname), input$clientcustomerId =="")
-    })
     })
 
 
