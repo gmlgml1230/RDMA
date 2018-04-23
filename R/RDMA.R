@@ -137,7 +137,8 @@ RDMA <- function(){
                      ),
                      dataTableOutput("scdata"),
                      hr(),
-                     actionButton(inputId = "scdownload", label = "Download", icon = icon("cloud-download"))
+                     # actionButton(inputId = "scdownload", label = "Download", icon = icon("cloud-download")),
+                     downloadButton("sc_data.csv", "Download")
                    )
       ),
 
@@ -170,7 +171,8 @@ RDMA <- function(){
                      ),
                      dataTableOutput("omdata"),
                      hr(),
-                     actionButton(inputId = "omdownload", label = "Download", icon = icon("cloud-download"))
+                     # actionButton(inputId = "omdownload", label = "Download", icon = icon("cloud-download")),
+                     downloadButton("omniture_data.csv", "Download")
                    )
       ),
 
@@ -201,7 +203,8 @@ RDMA <- function(){
                      ),
                      dataTableOutput("addata"),
                      hr(),
-                     actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download"))
+                     # actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download")),
+                     downloadButton("adwords_data.csv", "Download")
                    )
       ),
 
@@ -235,7 +238,8 @@ RDMA <- function(){
                      ),
                      dataTableOutput("gadata"),
                      hr(),
-                     actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download"))
+                     # actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download")),
+                     downloadButton("ga_data.csv", "Download")
                    )
       )
     )
@@ -391,14 +395,17 @@ RDMA <- function(){
       })
     })
 
-    observeEvent(input$scdownload, {
-      data_ck(sc_data.df, text_page, {
-        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        write.csv(sc_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_SearchConsole.csv"), row.names = F)
-        removeModal()
-        showModal(text_page("다운로드가 완료되었습니다."))
-      })
-    })
+    # observeEvent(input$scdownload, {
+    #   data_ck(sc_data.df, text_page, {
+    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+    #     write.csv(sc_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_SearchConsole.csv"), row.names = F)
+    #     removeModal()
+    #     showModal(text_page("다운로드가 완료되었습니다."))
+    #   })
+    # })
+
+    output$`sc_data.csv` <- downloadHandler(filename = function(){''},
+                                            content = function(file){write.csv(sc_data.df, file, row.names = FALSE)})
 
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
@@ -498,14 +505,17 @@ RDMA <- function(){
       })
     })
 
-    observeEvent(input$omdownload, {
-      data_ck(omni_data.df, text_page, {
-        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        write.csv(omni_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_omniture.csv"), row.names = F)
-        removeModal()
-        showModal(text_page("다운로드가 완료되었습니다."))
-      })
-    })
+    # observeEvent(input$omdownload, {
+    #   data_ck(omni_data.df, text_page, {
+    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+    #     write.csv(omni_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_omniture.csv"), row.names = F)
+    #     removeModal()
+    #     showModal(text_page("다운로드가 완료되었습니다."))
+    #   })
+    # })
+
+    output$`omniture_data.csv` <- downloadHandler(filename = function(){''},
+                                                  content = function(file){write.csv(omni_data.df, file, row.names = FALSE)})
 
 
     ##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
@@ -593,14 +603,17 @@ RDMA <- function(){
       }
     })
 
-    observeEvent(input$addownload, {
-      data_ck(ga_data.df, text_page, {
-        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        write.csv(Ad_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_adwords.csv"), row.names = F)
-        removeModal()
-        showModal(text_page("다운로드가 완료되었습니다."))
-      })
-    })
+    # observeEvent(input$addownload, {
+    #   data_ck(ga_data.df, text_page, {
+    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+    #     write.csv(Ad_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_adwords.csv"), row.names = F)
+    #     removeModal()
+    #     showModal(text_page("다운로드가 완료되었습니다."))
+    #   })
+    # })
+
+    output$`adwords_data.csv` <- downloadHandler(filename = function(){''},
+                                                 content = function(file){write.csv(Ad_data.df, file, row.names = FALSE)})
 
 
     ##### Google Analytics ---------------------------------------------------------------------------------------------------------------
@@ -681,15 +694,18 @@ RDMA <- function(){
       })
     })
 
-    observeEvent(input$gadownload, {
-      data_ck(ga_data.df, text_page, {
-        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        write.csv(ga_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_googleAnalytics.csv"), row.names = F)
-        removeModal()
-        showModal(text_page("다운로드가 완료되었습니다."))
-      })
+    # observeEvent(input$gadownload, {
+    #   data_ck(ga_data.df, text_page, {
+    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+    #     write.csv(ga_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_googleAnalytics.csv"), row.names = F)
+    #     removeModal()
+    #     showModal(text_page("다운로드가 완료되었습니다."))
+    #   })
+    # })
 
-    })
+    output$`ga_data.csv` <- downloadHandler(filename = function(){''},
+                                            content = function(file){write.csv(ga_data.df, file, row.names = FALSE)})
+
 
   }
 
