@@ -18,4 +18,5 @@ Imports: shiny,
     shinyWidgets,
     searchConsoleR,
     googleAuthR,
-    googleAnalyticsR
+    googleAnalyticsR,
+    doParallel
