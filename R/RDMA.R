@@ -7,9 +7,13 @@
 #' @import RAdwords
 #' @import RSiteCatalyst
 #' @import shinyWidgets
+#' @import shinyAce
 #' @import searchConsoleR
 #' @import googleAuthR
 #' @import googleAnalyticsR
+#' @import doParallel
+#' @importFrom rstudioapi insertText
+#' @importFrom readxl excel_sheets
 
 
 
@@ -104,6 +108,7 @@ RDMA <- function(){
                        conditionalPanel(condition='input.scfilter==true', uiOutput("add_scfilter")),
                        actionButton(inputId = "scstart", label = "S&C Start")
                      ),
+                     verbatimTextOutput("scfail"),
                      dataTableOutput("scdata"),
                      hr(),
                      # actionButton(inputId = "scdownload", label = "Download", icon = icon("cloud-download")),
@@ -138,6 +143,7 @@ RDMA <- function(){
                        ),
                        actionButton("omstart", "Omniture Start")
                      ),
+                     verbatimTextOutput("omfail"),
                      dataTableOutput("omdata"),
                      hr(),
                      # actionButton(inputId = "omdownload", label = "Download", icon = icon("cloud-download")),
@@ -218,6 +224,8 @@ RDMA <- function(){
 
   server <- function(input, output, session) {
 
+    temp_err <- reactiveValues()
+
     text_page <- function(text, buffer = FALSE, button = "OK"){
       if(buffer == FALSE){
         modalDialog(
@@ -238,12 +246,18 @@ RDMA <- function(){
 
 
     my_search_analytics <- function(siteURL, startDate, endDate, dimensions, rowLimit, walk_data){
-      temp_df <- search_analytics(siteURL = siteURL,
-                                  startDate = startDate,
-                                  endDate = endDate,
-                                  dimensions = dimensions,
-                                  rowLimit = rowLimit,
-                                  walk_data = walk_data) %>% mutate(url = siteURL)
+      temp_df <- tryCatch({
+        search_analytics(siteURL = siteURL,
+                         startDate = startDate,
+                         endDate = endDate,
+                         dimensions = dimensions,
+                         rowLimit = rowLimit,
+                         walk_data = walk_data) %>% mutate(url = siteURL)
+      },
+      error = function(e){
+        temp_err <<- c(temp_err, siteURL)
+        NULL
+      })
     }
 
     observeEvent(input$scRefresh, {
@@ -264,6 +278,7 @@ RDMA <- function(){
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
         gar_auth("sc.httr-oauth")
+        temp_err <<- NULL
         sc_data.df <<- isolate({
           lapply(X = input$scwebsite,
                  FUN = my_search_analytics,
@@ -276,17 +291,9 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("S&C Data 추출 완료"))
         output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+        if(!is.null(temp_err)){output$scfail <- renderText({paste0("Fail URL \n",paste(temp_err, collapse = "\n"))})}
       })
     })
-
-    # observeEvent(input$scdownload, {
-    #   data_ck(sc_data.df, text_page, {
-    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-    #     write.csv(sc_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_SearchConsole.csv"), row.names = F)
-    #     removeModal()
-    #     showModal(text_page("다운로드가 완료되었습니다."))
-    #   })
-    # })
 
     output$`sc_data.csv` <- downloadHandler(filename = function(){''},
                                             content = function(file){write.csv(sc_data.df, file, row.names = FALSE)})
@@ -295,6 +302,28 @@ RDMA <- function(){
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
 
     omni_data.df <- reactiveValues()
+
+    my_QueueTrended <- function(reportsuite.id, date.from, date.to, metrics, elements, top, start, segment.id, enqueueOnly, max.attempts){
+      temp_df <- tryCatch({
+        temp <- QueueTrended(reportsuite.id = reportsuite.id,
+                             date.from = date.from,
+                             date.to = date.to,
+                             metrics = metrics,
+                             elements = elements,
+                             top = top,
+                             start = start,
+                             segment.id = segment.id,
+                             enqueueOnly = enqueueOnly,
+                             max.attempts = max.attempts)
+        temp$datetime <- as.Date(temp$datetime)
+        temp <- temp %>% mutate(country = reportsuite.id)
+        return(temp)
+      },
+      error = function(e){
+        temp_err <- reportsuite.id
+        return(temp_err)
+      })
+    }
 
     if(file.exists(".om.info.RData")){
       load(".om.info.RData")
@@ -371,32 +400,36 @@ RDMA <- function(){
       element_null_ck(input$countryname, input$metricname, input$elementname, element_name = c("Country", "Metric Name", "Element Name"), text_page = text_page, exr = {
         if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        omni_data.df <<- isolate({lapply(X = input$countryname,
-                                         FUN = QueueTrended,
-                                         date.from = input$omstartdate[1],
-                                         date.to = input$omstartdate[2],
-                                         metrics = input$metricname,
-                                         elements = input$elementname,
-                                         top = 50000,
-                                         start = 0,
-                                         segment.id = om_info$om_list$segmentname_id[which(input$segmentname == om_info$om_list$segmentname_name)],
-                                         enqueueOnly = FALSE,
-                                         max.attempts = 1000) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
-        })
+        id <- input$om_id; pw <- input$om_pw; start_date <- input$omstartdate[1]; end_date <- input$omstartdate[2]; metrics <- input$metricname; elements <- input$elementname; segment <- segment_id.char; om_info <- om_info;
+        doParallel::registerDoParallel(cores = 3)
+        omni_data.list <- foreach::foreach(reportsuite.id = input$countryname,
+                                           .packages = c("RSiteCatalyst", "dplyr", "shiny"),
+                                           .combine = 'comb',
+                                           .export = "my_QueueTrended",
+                                           .init = list(list(), list())
+        ) %dopar% {
+          RSiteCatalyst::SCAuth(id, pw)
+          temp <- my_QueueTrended(reportsuite.id = reportsuite.id,
+                                  date.from = start_date,
+                                  date.to = end_date,
+                                  metrics = metrics,
+                                  elements = elements,
+                                  segment.id = "",
+                                  top = 50000,
+                                  start = 0,
+                                  enqueueOnly = FALSE,
+                                  max.attempts = 1000)
+          if(is.list(temp)){list(temp,NULL)} else {list(NULL,temp)}
+        }
+        doParallel::registerDoParallel(cores = 1)
+        omni_data.df <<- omni_data.list[[1]] %>% do.call(., what = rbind)
+        temp_err <- unlist(omni_data.list[[2]])
         removeModal()
         showModal(text_page("옴니츄어 추출 완료"))
         output$omdata <- renderDataTable(omni_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+        if(!is.null(temp_err)){output$omfail <- renderText({paste0("Fail Country \n",paste(temp_err, collapse = "\n"))})}
       })
     })
-
-    # observeEvent(input$omdownload, {
-    #   data_ck(omni_data.df, text_page, {
-    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-    #     write.csv(omni_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_omniture.csv"), row.names = F)
-    #     removeModal()
-    #     showModal(text_page("다운로드가 완료되었습니다."))
-    #   })
-    # })
 
     output$`omniture_data.csv` <- downloadHandler(filename = function(){''},
                                                   content = function(file){write.csv(omni_data.df, file, row.names = FALSE)})
@@ -487,15 +520,6 @@ RDMA <- function(){
       }
     })
 
-    # observeEvent(input$addownload, {
-    #   data_ck(ga_data.df, text_page, {
-    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-    #     write.csv(Ad_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_adwords.csv"), row.names = F)
-    #     removeModal()
-    #     showModal(text_page("다운로드가 완료되었습니다."))
-    #   })
-    # })
-
     output$`adwords_data.csv` <- downloadHandler(filename = function(){''},
                                                  content = function(file){write.csv(Ad_data.df, file, row.names = FALSE)})
 
@@ -577,15 +601,6 @@ RDMA <- function(){
         output$gadata <- renderDataTable(ga_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
       })
     })
-
-    # observeEvent(input$gadownload, {
-    #   data_ck(ga_data.df, text_page, {
-    #     showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-    #     write.csv(ga_data.df, paste0(format(Sys.time(), "%Y_%m_%d_%H_%M"),"_googleAnalytics.csv"), row.names = F)
-    #     removeModal()
-    #     showModal(text_page("다운로드가 완료되었습니다."))
-    #   })
-    # })
 
     output$`ga_data.csv` <- downloadHandler(filename = function(){''},
                                             content = function(file){write.csv(ga_data.df, file, row.names = FALSE)})
