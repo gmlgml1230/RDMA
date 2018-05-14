@@ -19,4 +19,5 @@ Imports: shiny,
     searchConsoleR,
     googleAuthR,
     googleAnalyticsR,
-    doParallel
+    doParallel,
+    foreach
