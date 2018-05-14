@@ -156,6 +156,7 @@ RDMA <- function(){
                        ),
                        actionButton("omstart", "Omniture Start")
                      ),
+                     # verbatimTextOutput("test"),
                      verbatimTextOutput("omfail"),
                      dataTableOutput("omdata"),
                      hr(),
@@ -432,22 +433,10 @@ RDMA <- function(){
       })
     }
 
-    if(file.exists(".om.info.RData")){
-      load(".om.info.RData")
-      om_id <- om_info$ID
-      om_pw <- om_info$PW
-      updateSelectizeInput(session, "metricname", choices = om_info$om_list$metricname, options = list(maxOptions = length(om_info$om_list$metricname)))
-      updateSelectizeInput(session, "elementname", choices = om_info$om_list$elementname, options = list(maxOptions = length(om_info$om_list$elementname)))
-      updateSelectizeInput(session, "segmentname", choices = om_info$om_list$segmentname_name, options = list(maxOptions = length(om_info$om_list$segmentname_name)))
-    } else {
-      om_id <- ""
-      om_pw <- ""
-    }
-
     om_auth_page <- function(){
       modalDialog(
-        textInput(inputId = "om_id", label = "ID", value = om_id),
-        textInput(inputId = "om_pw", label = "Pass Word", value = om_pw),
+        textInput(inputId = "om_id", label = "ID", value = if(file.exists(".om.info.RData")){om_info$ID} else {""}),
+        textInput(inputId = "om_pw", label = "Pass Word", value = if(file.exists(".om.info.RData")){om_info$PW} else {""}),
         footer = tagList(
           actionButton(inputId = "omauthok", label = "OK"),
           modalButton("Cancel")
@@ -455,23 +444,33 @@ RDMA <- function(){
       )
     }
 
-    observeEvent(input$omlogin, showModal(om_auth_page()))
+    observeEvent(input$omlogin, {
+      if(file.exists(".om.info.RData")){
+        load(".om.info.RData")
+        updateSelectizeInput(session, "metricname", choices = om_info$om_list$metricname$name, options = list(maxOptions = length(om_info$om_list$metricname$name)))
+        updateSelectizeInput(session, "elementname", choices = om_info$om_list$elementname$name, options = list(maxOptions = length(om_info$om_list$elementname$name)))
+        updateSelectizeInput(session, "segmentname", choices = om_info$om_list$segmentname$name, options = list(maxOptions = length(om_info$om_list$segmentname$name)))
+      }
+      showModal(om_auth_page())
+    })
 
     observeEvent(input$omauthok, {
-      removeModal()
       isolate({
-        om_info <<- list("ID" = input$om_id, "PW" = input$om_pw)
-
+        removeModal()
+        temp_list <- list("ID" = input$om_id, "PW" = input$om_pw)
         if(file.exists(".om.info.RData") == FALSE){
+          om_info <- list("ID" = input$om_id, "PW" = input$om_pw)
           save("om_info", file = ".om.info.RData")
         } else {
-          if(om_id == input$om_id && om_pw == input$om_pw){
+          if(om_info$ID == temp_list$ID && om_info$PW == temp_list$PW){
           } else {
+            om_info$ID <<- input$om_id
+            om_info$PW <<- input$om_pw
             save("om_info", file = ".om.info.RData")
           }
         }
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        RSiteCatalyst::SCAuth(isolate({input$om_id}), isolate({input$om_pw}))
+        RSiteCatalyst::SCAuth(om_info$ID, om_info$PW)
         updateSelectizeInput(session, "countryname", choices = RSiteCatalyst::GetReportSuites()$rsid)
         removeModal()
         showModal(text_page("완료 되었습니다"))
@@ -487,28 +486,47 @@ RDMA <- function(){
         } else {
           showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
           om_list <- list(
-            "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1])$id,
-            "elementname" = RSiteCatalyst::GetElements(input$countryname[1])$id,
-            "segmentname_id" = RSiteCatalyst::GetSegments(input$countryname[1])$id,
-            "segmentname_name" = RSiteCatalyst::GetSegments(input$countryname[1])$name
+            "metricname" = RSiteCatalyst::GetMetrics(input$countryname[1]),
+            "elementname" = RSiteCatalyst::GetElements(input$countryname[1]),
+            "segmentname" = RSiteCatalyst::GetSegments(input$countryname[1])
           )
           removeModal()
           om_info$om_list <<- om_list
           save("om_info", file = ".om.info.RData")
-          updateSelectizeInput(session, "metricname", choices = om_list$metricname, options = list(maxOptions = length(om_list$metricname)))
-          updateSelectizeInput(session, "elementname", choices = om_list$elementname, options = list(maxOptions = length(om_list$elementname)))
-          updateSelectizeInput(session, "segmentname", choices = om_list$segmentname_name, options = list(maxOptions = length(om_list$segmentname_name)))
+          updateSelectizeInput(session, "metricname", choices = om_list$metricname$name, options = list(maxOptions = length(om_list$metricname$name)))
+          updateSelectizeInput(session, "elementname", choices = om_list$elementname$name, options = list(maxOptions = length(om_list$elementname$name)))
+          updateSelectizeInput(session, "segmentname", choices = om_list$segmentname$name, options = list(maxOptions = length(om_list$segmentname$name)))
           showModal(text_page("완료 되었습니다"))
         }
       })
     })
 
+    omdf_rename_func <- reactive({
+      metric_id <- om_info$om_list$metricname$id[om_info$om_list$metricname$name %in% input$metricname]
+      metric_name <- om_info$om_list$metricname$name[om_info$om_list$metricname$name %in% input$metricname]
+      element_id <- om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$elementname]
+      element_name <- om_info$om_list$elementname$name[om_info$om_list$elementname$name %in% input$elementname]
+      metric_rename <- paste0(paste0("`", metric_name, "` = "), metric_id)
+      element_rename <- paste0(paste0("`", element_name, "` = "), element_id)
+      om_rename <- paste0("omni_data.df %>% rename(Date = datetime,",paste0(c(metric_rename, element_rename), collapse = ","),")")
+      return(om_rename)
+    })
+
+    # observe({output$test <- renderText({c(om_info$om_list$metricname$id[om_info$om_list$metricname$name %in% input$metricname],om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$elementname],omdf_rename_func())})})
+
     observeEvent(input$omstart, {
       element_null_ck(input$countryname, input$metricname, input$elementname, element_name = c("Country", "Metric Name", "Element Name"), text_page = text_page, exr = {
-        if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
+        if(is.null(input$segmentname)){segment <- ""} else {segment <- isolate({input$segmentname})}
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
         temp_err <- NULL
-        id <- input$om_id; pw <- input$om_pw; start_date <- input$omstartdate[1]; end_date <- input$omstartdate[2]; metrics <- input$metricname; elements <- input$elementname; segment <- segment_id.char; om_info <- om_info;
+        id <- input$om_id
+        pw <- input$om_pw
+        start_date <- input$omstartdate[1]
+        end_date <- input$omstartdate[2]
+        metrics <- om_info$om_list$metricname$id[om_info$om_list$metricname$name %in% input$metricname]
+        elements <- om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$elementname]
+        segment <- om_info$om_list$segmentname$id[om_info$om_list$segmentname$name %in% input$segmentname]
+        om_info <- om_info
         doParallel::registerDoParallel(cores = 3)
         omni_data.list <- foreach::foreach(reportsuite.id = input$countryname,
                                            .packages = c("RSiteCatalyst", "dplyr", "shiny"),
@@ -530,7 +548,8 @@ RDMA <- function(){
           if(is.list(temp)){list(temp,NULL)} else {list(NULL,temp)}
         }
         doParallel::registerDoParallel(cores = 1)
-        omni_data.df <<- omni_data.list[[1]] %>% do.call(., what = rbind)
+        omni_data.df <- omni_data.list[[1]] %>% do.call(., what = rbind)
+        try(omni_data.df <- eval(parse(text = omdf_rename_func())))
         temp_err <- unlist(omni_data.list[[2]])
         removeModal()
         showModal(text_page("옴니츄어 추출 완료"))
@@ -562,8 +581,8 @@ RDMA <- function(){
 
     my_getData <- function(clientCustomerId, google_auth, statement){
       temp.df <- RAdwords::getData(clientCustomerId = clientCustomerId,
-                                  google_auth = google_auth,
-                                  statement = statement) %>% mutate(CustomerId = clientCustomerId)
+                                   google_auth = google_auth,
+                                   statement = statement) %>% mutate(CustomerId = clientCustomerId)
     }
 
     clientToken_page <- function(){
@@ -659,7 +678,7 @@ RDMA <- function(){
                                            date_range = date_range,
                                            metrics = metrics,
                                            dimensions = dimensions,
-                                           max = -1) %>% mutate(`Id Name` = ga_id$viewName[which(ga_id$viewId %in% id)])
+                                           max = -1) %>% mutate(`Id Name` = ga_id$viewName[ga_id$viewId %in% id])
       },
       error = function(e){
         temp_err <<- c(temp_err, ga_id$viewName[(which(ga_id$viewId %in% id))])
