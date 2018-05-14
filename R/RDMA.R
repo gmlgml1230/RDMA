@@ -188,6 +188,7 @@ RDMA <- function(){
                        ),
                        actionButton(inputId = "adstart", label = "Adwords Start")
                      ),
+                     # verbatimTextOutput("adfail"),
                      dataTableOutput("addata"),
                      hr(),
                      downloadButton("adwords_data.csv", "Download")
@@ -558,6 +559,18 @@ RDMA <- function(){
       )
     }
 
+    # my_getData <- function(clientCustomerId, google_auth, statement){
+    #   temp.df <- tryCatch({
+    #     temp <- RAdwords::getData(clientCustomerId = clientCustomerId,
+    #                               google_auth = google_auth,
+    #                               statement = statement) %>% mutate(CustomerId = clientCustomerId)
+    #   },
+    #   error = function(e){
+    #     temp_err <- clientCustomerId
+    #     return(temp_err)
+    #   })
+    # }
+
     clientToken_page <- function(){
       modalDialog(
         textInput(inputId = "clienttoken", label = "Client Token"),
@@ -613,6 +626,7 @@ RDMA <- function(){
                     end = input$adstartdate[2])
         })
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        temp_err <- NULL
         isolate({
           Ad_clientcustomerId <- unlist(strsplit(input$clientcustomerId, ","))
           Ad_data.df <<- lapply(X = Ad_clientcustomerId,
@@ -623,6 +637,7 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("애드워즈 추출 완료"))
         output$addata <- renderDataTable(Ad_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+        # if(!is.null(temp_err)){output$adfail <- renderText({paste0("Fail CustomerId \n",paste(temp_err, collapse = "\n"))})} else {output$adfail <- renderText({})}
       }
     })
 
