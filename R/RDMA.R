@@ -505,7 +505,7 @@ RDMA <- function(){
       element_null_ck(input$countryname, input$metricname, input$elementname, element_name = c("Country", "Metric Name", "Element Name"), text_page = text_page, exr = {
         if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        temp_err <- NULL
+        temp_err <<- NULL
         id <- input$om_id; pw <- input$om_pw; start_date <- input$omstartdate[1]; end_date <- input$omstartdate[2]; metrics <- input$metricname; elements <- input$elementname; segment <- segment_id.char; om_info <- om_info;
         doParallel::registerDoParallel(cores = 3)
         omni_data.list <- foreach::foreach(reportsuite.id = input$countryname,
