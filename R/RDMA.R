@@ -560,17 +560,11 @@ RDMA <- function(){
       )
     }
 
-    # my_getData <- function(clientCustomerId, google_auth, statement){
-    #   temp.df <- tryCatch({
-    #     temp <- RAdwords::getData(clientCustomerId = clientCustomerId,
-    #                               google_auth = google_auth,
-    #                               statement = statement) %>% mutate(CustomerId = clientCustomerId)
-    #   },
-    #   error = function(e){
-    #     temp_err <- clientCustomerId
-    #     return(temp_err)
-    #   })
-    # }
+    my_getData <- function(clientCustomerId, google_auth, statement){
+      temp.df <- RAdwords::getData(clientCustomerId = clientCustomerId,
+                                  google_auth = google_auth,
+                                  statement = statement) %>% mutate(CustomerId = clientCustomerId)
+    }
 
     clientToken_page <- function(){
       modalDialog(
@@ -631,7 +625,7 @@ RDMA <- function(){
         isolate({
           Ad_clientcustomerId <- unlist(strsplit(input$clientcustomerId, ","))
           Ad_data.df <<- lapply(X = Ad_clientcustomerId,
-                                FUN = RAdwords::getData,
+                                FUN = my_getData,
                                 google_auth = google_auth,
                                 statement = body) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
         })
