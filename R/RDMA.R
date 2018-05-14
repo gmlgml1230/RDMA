@@ -519,7 +519,7 @@ RDMA <- function(){
                                   date.to = end_date,
                                   metrics = metrics,
                                   elements = elements,
-                                  segment.id = "",
+                                  segment.id = segment,
                                   top = 50000,
                                   start = 0,
                                   enqueueOnly = FALSE,
