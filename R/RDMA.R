@@ -504,7 +504,7 @@ RDMA <- function(){
         doParallel::registerDoParallel(cores = 3)
         omni_data.list <- foreach::foreach(reportsuite.id = input$countryname,
                                            .packages = c("RSiteCatalyst", "dplyr", "shiny"),
-                                           .combine = 'comb',
+                                           .combine = 'c',
                                            .export = "my_QueueTrended",
                                            .init = list(list(), list())
         ) %dopar% {
