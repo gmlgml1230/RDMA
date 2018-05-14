@@ -377,7 +377,7 @@ RDMA <- function(){
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
         gar_auth("sc.httr-oauth")
-        temp_err <<- NULL
+        temp_err <- NULL
         sc_data.df <<- isolate({
           lapply(X = input$scwebsite,
                  FUN = my_search_analytics,
@@ -391,7 +391,7 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("S&C Data 추출 완료"))
         output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
-        if(!is.null(temp_err)){output$scfail <- renderText({paste0("Fail URL \n",paste(temp_err, collapse = "\n"))})}
+        if(!is.null(temp_err)){output$scfail <- renderText({paste0("Fail URL \n",paste(temp_err, collapse = "\n"))})} else {output$scfail <- renderText({})}
       })
     })
 
@@ -505,7 +505,7 @@ RDMA <- function(){
       element_null_ck(input$countryname, input$metricname, input$elementname, element_name = c("Country", "Metric Name", "Element Name"), text_page = text_page, exr = {
         if(is.null(input$segmentname)){segment_id.char <- ""} else {segment_id.char <- isolate({input$segmentname})}
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
-        temp_err <<- NULL
+        temp_err <- NULL
         id <- input$om_id; pw <- input$om_pw; start_date <- input$omstartdate[1]; end_date <- input$omstartdate[2]; metrics <- input$metricname; elements <- input$elementname; segment <- segment_id.char; om_info <- om_info;
         doParallel::registerDoParallel(cores = 3)
         omni_data.list <- foreach::foreach(reportsuite.id = input$countryname,
@@ -533,7 +533,7 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("옴니츄어 추출 완료"))
         output$omdata <- renderDataTable(omni_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
-        if(!is.null(temp_err)){output$omfail <- renderText({paste0("Fail Country \n",paste(temp_err, collapse = "\n"))})}
+        if(!is.null(temp_err)){output$omfail <- renderText({paste0("Fail Country \n",paste(temp_err, collapse = "\n"))})} else {output$omfail <- renderText({})}
       })
     })
 
@@ -713,7 +713,7 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("GA Data 추출 완료"))
         output$gadata <- renderDataTable(ga_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
-        if(!is.null(temp_err)){output$gafail <- renderText({paste0("Fail ID \n",paste(temp_err, collapse = "\n"))})}
+        if(!is.null(temp_err)){output$gafail <- renderText({paste0("Fail ID \n",paste(temp_err, collapse = "\n"))})} else {output$gafail <- renderText({})}
       })
     })
 
