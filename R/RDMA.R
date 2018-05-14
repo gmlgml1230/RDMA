@@ -217,9 +217,10 @@ RDMA <- function(){
                          column(3,
                                 selectizeInput(inputId = "gametric", label = "Metric", choices = if(!exists("ga_metric")){""} else {ga_metric}, multiple = T)),
                          column(3,
-                                selectizeInput(inputId = "gadimension", label = "Dimension", choices = if(!exists("ga_dimension")){""} else {ga_dimension}, multiple = T)),
-                         column(3,
-                                selectizeInput(inputId = "gasegment", label = "Segment", choices = if(!exists("ga_segment")){""} else {ga_segment$name}, multiple = T))
+                                selectizeInput(inputId = "gadimension", label = "Dimension", choices = if(!exists("ga_dimension")){""} else {ga_dimension}, multiple = T))
+                         # ,
+                         # column(3,
+                         #        selectizeInput(inputId = "gasegment", label = "Segment", choices = if(!exists("ga_segment")){""} else {ga_segment$name}, multiple = T))
                        ),
                        actionButton(inputId = "gastart", label = "G&A Start")
                      ),
@@ -559,11 +560,17 @@ RDMA <- function(){
       )
     }
 
-    my_getData <- function(clientCustomerId, google_auth, statement){
-      temp.df <- RAdwords::getData(clientCustomerId = clientCustomerId,
-                                  google_auth = google_auth,
-                                  statement = statement) %>% mutate(CustomerId = clientCustomerId)
-    }
+    # my_getData <- function(clientCustomerId, google_auth, statement){
+    #   temp.df <- tryCatch({
+    #     temp <- RAdwords::getData(clientCustomerId = clientCustomerId,
+    #                               google_auth = google_auth,
+    #                               statement = statement) %>% mutate(CustomerId = clientCustomerId)
+    #   },
+    #   error = function(e){
+    #     temp_err <- clientCustomerId
+    #     return(temp_err)
+    #   })
+    # }
 
     clientToken_page <- function(){
       modalDialog(
@@ -624,7 +631,7 @@ RDMA <- function(){
         isolate({
           Ad_clientcustomerId <- unlist(strsplit(input$clientcustomerId, ","))
           Ad_data.df <<- lapply(X = Ad_clientcustomerId,
-                                FUN = my_getData,
+                                FUN = RAdwords::getData,
                                 google_auth = google_auth,
                                 statement = body) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
         })
