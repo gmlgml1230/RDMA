@@ -25,7 +25,7 @@ getauth = function(clientid, clientsecret, developertoken) {
                  'access_type=offline&',
                  'approval_prompt=force', sep='', collapse='')
     cert <- system.file("CurlSSL", "ca-bundle.crt", package = "RCurl")
-    RCurl::getURL(url, cainfo=cert, ssl.verifypeer = TRUE)
+    RCurl::getURL(url, cainfo=cert, ssl.verifypeer = FALSE)
     browseURL(url)
   }
   credentials
