@@ -12,6 +12,7 @@
 #' @import googleAuthR
 #' @import googleAnalyticsR
 #' @import doParallel
+#' @import foreach
 #' @importFrom rstudioapi insertText
 #' @importFrom readxl excel_sheets
 
