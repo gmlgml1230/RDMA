@@ -105,13 +105,25 @@ RDMA <- function(){
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
                        shinyWidgets::materialSwitch("scfilter", "Filter", status="info"),
-                       conditionalPanel(condition='input.scfilter==true', uiOutput("add_scfilter")),
+                       conditionalPanel(condition = "input.scfilter == true",
+                                        wellPanel(
+                                          fluidRow(
+                                            actionButton(inputId = "scfilteradd",label = "ADD"),
+                                            actionButton(inputId = "scfilterdelete",label = "Delete")
+                                          ),
+                                          fluidRow(
+                                            column(3,
+                                                   uiOutput("scfilterborder")),
+                                            column(9,
+                                                   uiOutput("add_scfilter"))
+                                          )
+                                        )
+                       ),
                        actionButton(inputId = "scstart", label = "S&C Start")
                      ),
                      verbatimTextOutput("scfail"),
                      dataTableOutput("scdata"),
                      hr(),
-                     # actionButton(inputId = "scdownload", label = "Download", icon = icon("cloud-download")),
                      downloadButton("sc_data.csv", "Download")
                    )
       ),
@@ -146,7 +158,6 @@ RDMA <- function(){
                      verbatimTextOutput("omfail"),
                      dataTableOutput("omdata"),
                      hr(),
-                     # actionButton(inputId = "omdownload", label = "Download", icon = icon("cloud-download")),
                      downloadButton("omniture_data.csv", "Download")
                    )
       ),
@@ -178,7 +189,6 @@ RDMA <- function(){
                      ),
                      dataTableOutput("addata"),
                      hr(),
-                     # actionButton(inputId = "addownload", label = "Download", icon = icon("cloud-download")),
                      downloadButton("adwords_data.csv", "Download")
                    )
       ),
@@ -211,9 +221,9 @@ RDMA <- function(){
                        ),
                        actionButton(inputId = "gastart", label = "G&A Start")
                      ),
+                     verbatimTextOutput("gafail"),
                      dataTableOutput("gadata"),
                      hr(),
-                     # actionButton(inputId = "gadownload", label = "Download", icon = icon("cloud-download")),
                      downloadButton("ga_data.csv", "Download")
                    )
       )
@@ -243,14 +253,15 @@ RDMA <- function(){
     ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
 
     sc_data.df <- reactiveValues()
+    sc_filter_add <- reactiveValues(filter = 0)
 
-
-    my_search_analytics <- function(siteURL, startDate, endDate, dimensions, rowLimit, walk_data){
+    my_search_analytics <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
       temp_df <- tryCatch({
         search_analytics(siteURL = siteURL,
                          startDate = startDate,
                          endDate = endDate,
                          dimensions = dimensions,
+                         dimensionFilterExp = dimensionFilterExp,
                          rowLimit = rowLimit,
                          walk_data = walk_data) %>% mutate(url = siteURL)
       },
@@ -274,6 +285,93 @@ RDMA <- function(){
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
 
+    scfilter_name <- reactive({
+      select_dimension <- input$scdimension
+      select_dimension <- if(any(select_dimension %in% "date")){return(select_dimension[!select_dimension %in% "date"])} else {select_dimension}
+    })
+
+    scfilter_func <- reactive({
+      select_name <- sapply(1:sc_filter_add$filter, function(i){eval(parse(text=paste0("input$sclist",i)))})
+      if(!is.null(select_name)){
+        scfiltercode <- c(
+          if(any(select_name %in% "country") && input$exprecountry != ""){paste0("country",input$opercountry,input$exprecountry)} else {NULL},
+          if(any(select_name %in% "device") && input$expredevice != ""){paste0("device",input$operdevice,input$expredevice)} else {NULL},
+          if(any(select_name %in% "page") && input$exprepage != ""){paste0("page",input$operpage,input$exprepage)} else {NULL},
+          if(any(select_name %in% "query") && input$exprequery != ""){paste0("query",input$operquery,input$exprequery)} else {NULL},
+          if(any(select_name %in% "searchAppearance") && input$expresearch != ""){paste0("searchAppearance",input$opersearch,input$expresearch)} else {NULL}
+        )
+        return(scfiltercode)
+      } else {NULL}
+
+    })
+
+    observeEvent(input$scfilteradd, {
+      if(sc_filter_add$filter < length(scfilter_name())){
+        sc_filter_add$filter <- sc_filter_add$filter + 1
+        if(sc_filter_add$filter >= 1){
+          output$scfilterborder <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
+          })
+          output$add_scfilter <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              scfilter_list.func(input[[paste0("sclist",i)]])
+            })
+          })
+        }
+      }
+    })
+
+    observeEvent(input$scfilterdelete, {
+      if(sc_filter_add$filter > 0){
+        sc_filter_add$filter <- sc_filter_add$filter - 1
+        if(sc_filter_add$filter == 0){
+          output$scfilterborder <- renderUI({})
+          output$add_scfilter <- renderUI({})
+        } else {
+          output$scfilterborder <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
+          })
+          output$add_scfilter <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              scfilter_list.func(input[[paste0("sclist",i)]])
+            })
+          })
+        }
+      }
+    })
+
+    scfilter_list.func <- function(select){
+      if(any(select %in% "country")){
+        tagList(
+          column(5, selectInput(inputId = "opercountry", label = "Operator", choices = c("~~","==","!~","!="))),
+          column(5, textInput(inputId = "exprecountry",label = "Expression"))
+        )
+      } else if(any(select %in% "device")) {
+        tagList(
+          column(5, selectInput(inputId = "operdevice", label = "Operator", choices = c("~~","==","!~","!="))),
+          column(5, selectInput(inputId = "expredevice",label = "Expression", choices = c("","DESKTOP","MOBILE","TABLET")))
+        )
+      } else if(any(select %in% "page")) {
+        tagList(
+          column(5, selectInput(inputId = "operpage", label = "Operator", choices = c("~~","==","!~","!="))),
+          column(5, textInput(inputId = "exprepage",label = "Expression"))
+        )
+      } else if(any(select %in% "query")) {
+        tagList(
+          column(5, selectInput(inputId = "operquery", label = "Operator", choices = c("~~","==","!~","!="))),
+          column(5, textInput(inputId = "exprequery",label = "Expression"))
+        )
+      } else if(any(select %in% "searchAppearance")) {
+        tagList(
+          column(5, selectInput(inputId = "opersearch", label = "Operator", choices = c("~~","==","!~","!="))),
+          column(5, selectInput(inputId = "expresearch",label = "Expression", choices = c("","AMP_BLUE_LINK","RICHCARD")))
+        )
+      }
+    }
+
+
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
@@ -285,6 +383,7 @@ RDMA <- function(){
                  startDate = input$scstartdate[1],
                  endDate = input$scstartdate[2],
                  dimensions = input$scdimension,
+                 dimensionFilterExp = if(input$scfilter && !is.null(scfilter_func())){scfilter_func()} else {NULL},
                  rowLimit = 5000,
                  walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
         })
@@ -538,11 +637,18 @@ RDMA <- function(){
     }
 
     my_google_analytics <- function(id, date_range, metrics, dimensions, ga_id){
-      temp_df <- googleAnalyticsR::google_analytics(viewId = id,
-                                                    date_range = date_range,
-                                                    metrics = metrics,
-                                                    dimensions = dimensions,
-                                                    max = -1) %>% mutate(`Id Name` = ga_id$viewName[which(ga_id$viewId %in% id)])
+      temp_df <- tryCatch({
+        googleAnalyticsR::google_analytics(viewId = id,
+                                           date_range = date_range,
+                                           metrics = metrics,
+                                           dimensions = dimensions,
+                                           max = -1) %>% mutate(`Id Name` = ga_id$viewName[which(ga_id$viewId %in% id)])
+      },
+      error = function(e){
+        temp_err <<- c(temp_err, ga_id$viewName[(which(ga_id$viewId %in% id))])
+        NULL
+      })
+
     }
 
     observeEvent(input$gaRefresh, {
@@ -588,6 +694,7 @@ RDMA <- function(){
     observeEvent(input$gastart, {
       element_null_ck(input$gaid, input$gametric, input$gadimension, element_name = c("Id", "Metric", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        temp_err <<- NULL
         isolate({
           ga_data.df <<- lapply(X = ga_id$viewId[(which(ga_id$viewName %in% input$gaid))],
                                 FUN = my_google_analytics,
@@ -599,6 +706,7 @@ RDMA <- function(){
         removeModal()
         showModal(text_page("GA Data 추출 완료"))
         output$gadata <- renderDataTable(ga_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+        if(!is.null(temp_err)){output$gafail <- renderText({paste0("Fail ID \n",paste(temp_err, collapse = "\n"))})}
       })
     })
 
