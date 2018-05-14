@@ -403,6 +403,11 @@ RDMA <- function(){
 
     omni_data.df <- reactiveValues()
 
+    comb <- function(x, ...) {
+      lapply(seq_along(x),
+             function(i) c(x[[i]], lapply(list(...), function(y) y[[i]])))
+    }
+                                          
     my_QueueTrended <- function(reportsuite.id, date.from, date.to, metrics, elements, top, start, segment.id, enqueueOnly, max.attempts){
       temp_df <- tryCatch({
         temp <- QueueTrended(reportsuite.id = reportsuite.id,
