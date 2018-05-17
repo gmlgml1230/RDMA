@@ -548,7 +548,7 @@ RDMA <- function(){
           if(is.list(temp)){list(temp,NULL)} else {list(NULL,temp)}
         }
         doParallel::registerDoParallel(cores = 1)
-        omni_data.df <- omni_data.list[[1]] %>% do.call(., what = rbind)
+        omni_data.df <<- omni_data.list[[1]] %>% do.call(., what = rbind)
         try(omni_data.df <- eval(parse(text = omdf_rename_func())))
         temp_err <- unlist(omni_data.list[[2]])
         removeModal()
