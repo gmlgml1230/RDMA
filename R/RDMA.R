@@ -105,7 +105,7 @@ RDMA <- function(){
                          column(3,
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
-                       shinyWidgets::materialSwitch("scfilter", "Filter", status="info"),
+                       shinyWidgets::materialSwitch("scfilter", "Filter", status = "info"),
                        conditionalPanel(condition = "input.scfilter == true",
                                         wellPanel(
                                           fluidRow(
@@ -154,9 +154,19 @@ RDMA <- function(){
                          column(3,
                                 selectizeInput(inputId = "segmentname", label = "Segment Name", choices = "", multiple = T))
                        ),
+                       shinyWidgets::materialSwitch("omfilter", "Filter", status = "info"),
+                       conditionalPanel(condition = "input.omfilter == true",
+                                        wellPanel(
+                                          fluidRow(
+                                            column(3,
+                                                   selectInput(inputId = "omfilterborder", label = "Select Element", choices = "")),
+                                            column(9,
+                                                   textInput(inputId = "omexpression", label = "Expression"))
+                                          )
+                                        )
+                       ),
                        actionButton("omstart", "Omniture Start")
                      ),
-                     # verbatimTextOutput("test"),
                      verbatimTextOutput("omfail"),
                      dataTableOutput("omdata"),
                      hr(),
@@ -411,7 +421,7 @@ RDMA <- function(){
              function(i) c(x[[i]], lapply(list(...), function(y) y[[i]])))
     }
 
-    my_QueueTrended <- function(reportsuite.id, date.from, date.to, metrics, elements, top, start, segment.id, enqueueOnly, max.attempts){
+    my_QueueTrended <- function(reportsuite.id, date.from, date.to, metrics, elements, top, start, search, segment.id, enqueueOnly, max.attempts){
       temp_df <- tryCatch({
         temp <- QueueTrended(reportsuite.id = reportsuite.id,
                              date.from = date.from,
@@ -420,6 +430,7 @@ RDMA <- function(){
                              elements = elements,
                              top = top,
                              start = start,
+                             search = search,
                              segment.id = segment.id,
                              enqueueOnly = enqueueOnly,
                              max.attempts = max.attempts)
@@ -446,7 +457,7 @@ RDMA <- function(){
 
     observeEvent(input$omlogin, {
       if(file.exists(".om.info.RData")){
-        load(".om.info.RData")
+        load(".om.info.RData", envir=.GlobalEnv)
         updateSelectizeInput(session, "metricname", choices = om_info$om_list$metricname$name, options = list(maxOptions = length(om_info$om_list$metricname$name)))
         updateSelectizeInput(session, "elementname", choices = om_info$om_list$elementname$name, options = list(maxOptions = length(om_info$om_list$elementname$name)))
         updateSelectizeInput(session, "segmentname", choices = om_info$om_list$segmentname$name, options = list(maxOptions = length(om_info$om_list$segmentname$name)))
@@ -501,18 +512,40 @@ RDMA <- function(){
       })
     })
 
+    observe({
+      updateSelectInput(session, inputId = "omfilterborder", choices = input$elementname)
+    })
+
     omdf_rename_func <- reactive({
       metric_id <- om_info$om_list$metricname$id[om_info$om_list$metricname$name %in% input$metricname]
       metric_name <- om_info$om_list$metricname$name[om_info$om_list$metricname$name %in% input$metricname]
       element_id <- om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$elementname]
       element_name <- om_info$om_list$elementname$name[om_info$om_list$elementname$name %in% input$elementname]
       metric_rename <- paste0(paste0("`", metric_name, "` = "), metric_id)
-      element_rename <- paste0(paste0("`", element_name, "` = "), element_id)
+      if(length(input$elementname) == 1){
+        element_rename <- paste0(element_id, "= name")
+      } else {
+        element_rename <- paste0(paste0("`", element_name, "` = "), element_id)
+      }
       om_rename <- paste0("omni_data.df %>% rename(Date = datetime,",paste0(c(metric_rename, element_rename), collapse = ","),")")
       return(om_rename)
     })
 
-    # observe({output$test <- renderText({c(om_info$om_list$metricname$id[om_info$om_list$metricname$name %in% input$metricname],om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$elementname],omdf_rename_func())})})
+    omdf_filter_first_func <- reactive({
+      select_element_id <- om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$omfilterborder]
+      element_id <- om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$elementname]
+      if(input$omfilter){elements <- c(select_element_id, element_id[!(element_id %in% select_element_id)])} else {elements <- element_id}
+      return(elements)
+    })
+
+    omdf_filter_func <- reactive({
+      if(input$omexpression == ""){
+        search <- NULL
+      } else {
+        search <- unlist(strsplit(input$omexpression, ","))
+      }
+      return(search)
+    })
 
     observeEvent(input$omstart, {
       element_null_ck(input$countryname, input$metricname, input$elementname, element_name = c("Country", "Metric Name", "Element Name"), text_page = text_page, exr = {
@@ -524,8 +557,9 @@ RDMA <- function(){
         start_date <- input$omstartdate[1]
         end_date <- input$omstartdate[2]
         metrics <- om_info$om_list$metricname$id[om_info$om_list$metricname$name %in% input$metricname]
-        elements <- om_info$om_list$elementname$id[om_info$om_list$elementname$name %in% input$elementname]
         segment <- om_info$om_list$segmentname$id[om_info$om_list$segmentname$name %in% input$segmentname]
+        elements <- omdf_filter_first_func()
+        search <- omdf_filter_func()
         om_info <- om_info
         doParallel::registerDoParallel(cores = 3)
         omni_data.list <- foreach::foreach(reportsuite.id = input$countryname,
@@ -535,6 +569,7 @@ RDMA <- function(){
                                            .init = list(list(), list())
         ) %dopar% {
           RSiteCatalyst::SCAuth(id, pw)
+          cat(reportsuite.id)
           temp <- my_QueueTrended(reportsuite.id = reportsuite.id,
                                   date.from = start_date,
                                   date.to = end_date,
@@ -543,13 +578,14 @@ RDMA <- function(){
                                   segment.id = segment,
                                   top = 50000,
                                   start = 0,
+                                  search = search,
                                   enqueueOnly = FALSE,
                                   max.attempts = 1000)
           if(is.list(temp)){list(temp,NULL)} else {list(NULL,temp)}
         }
         doParallel::registerDoParallel(cores = 1)
         omni_data.df <<- omni_data.list[[1]] %>% do.call(., what = rbind)
-        try(omni_data.df <- eval(parse(text = omdf_rename_func())))
+        omni_data.df <<- eval(parse(text = omdf_rename_func()))
         temp_err <- unlist(omni_data.list[[2]])
         removeModal()
         showModal(text_page("옴니츄어 추출 완료"))
