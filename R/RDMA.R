@@ -403,6 +403,7 @@ RDMA <- function(){
         })
         removeModal()
         showModal(text_page("S&C Data 추출 완료"))
+        Sys.setlocale ( "LC_ALL", "Arabic")
         output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
         if(!is.null(temp_err)){output$scfail <- renderText({paste0("Fail URL \n",paste(temp_err, collapse = "\n"))})} else {output$scfail <- renderText({})}
       })
