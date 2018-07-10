@@ -138,8 +138,6 @@ RDMA <- function(){
                        ),
                        actionButton(inputId = "scstart", label = "S&C Start")
                      ),
-                     actionButton(inputId = "test1", label = "test"),
-                     verbatimTextOutput("test"),
                      verbatimTextOutput("scfail"),
                      dataTableOutput("scdata"),
                      hr(),
@@ -413,20 +411,26 @@ RDMA <- function(){
     observeEvent(input$dtfilteradd, {
       if(dt_filter_add$filter < length(names(sc_data.df))){
         dt_filter_add$filter <- dt_filter_add$filter + 1
-        if(dt_filter_add$filter >= 1){
-          output$dtfilterborder <- renderUI({
-            lapply(1:dt_filter_add$filter, function(i){
-              selectInput(inputId = paste0("dtlist",i), label = "Select Filters", choices = names(sc_data.df))})
-          })
-          output$add_dtfilter <- renderUI({
-            lapply(1:dt_filter_add$filter, function(i){
+        output$dtfilterborder <- renderUI({
+          lapply(1:dt_filter_add$filter, function(i){
+            selectInput(inputId = paste0("dtlist",i), label = "Select Filters", choices = names(sc_data.df))})
+        })
+        output$add_dtfilter <- renderUI({
+          lapply(1:dt_filter_add$filter, function(i){
+            if(i != 1){
+              tagList(
+                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                column(5, textInput(inputId = paste0("expre", i), label = "Expression")),
+                column(2, selectInput(inputId = paste0("and_or", i), label = "", choices = c("AND", "OR"), selected = "AND"))
+              )
+            } else {
               tagList(
                 column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
                 column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
               )
-            })
+            }
           })
-        }
+        })
       }
     })
 
@@ -443,10 +447,18 @@ RDMA <- function(){
           })
           output$add_dtfilter <- renderUI({
             lapply(1:dt_filter_add$filter, function(i){
-              tagList(
-                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
-                column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
-              )
+              if(i != 1){
+                tagList(
+                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                  column(5, textInput(inputId = paste0("expre", i), label = "Expression")),
+                  column(2, selectInput(inputId = paste0("and_or", i), label = "", choices = c("AND", "OR"), selected = "AND"))
+                )
+              } else {
+                tagList(
+                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                  column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
+                )
+              }
             })
           })
         }
@@ -457,21 +469,37 @@ RDMA <- function(){
       eval.func <- function(...){
         eval(parse(text = paste0("input$", ...)))
       }
-      if(eval.func("oper",len) == "~~"){
-        paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ")")
-      } else if (eval.func("oper",len) == "==") {
-        paste0(eval.func("expre",len), " == ", eval.func("dtlist",len) )
-      } else if (eval.func("oper",len) == "!~") {
-        paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
-      } else if (eval.func("oper",len) == "!=") {
-        paste0(eval.func("expre",len), " != ", eval.func("dtlist",len))
+      
+      if(len == 1){
+        if(eval.func("oper",len) == "~~"){
+          paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ")")
+        } else if (eval.func("oper",len) == "==") {
+          paste0(eval.func("dtlist",len), " == '", eval.func("expre",len), "'")
+        } else if (eval.func("oper",len) == "!~") {
+          paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
+        } else if (eval.func("oper",len) == "!=") {
+          paste0(eval.func("dtlist",len), " != '", eval.func("expre",len), "'")
+        }
+      } else {
+        if(eval.func("and_or",len) == "AND"){and_or <- "&"} else {and_or <- "|"}
+        if(eval.func("oper",len) == "~~"){
+          paste0(" ", and_or, " grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ")")
+        } else if (eval.func("oper",len) == "==") {
+          paste0(" ", and_or, " ", eval.func("dtlist",len), " == '", eval.func("expre",len), "'")
+        } else if (eval.func("oper",len) == "!~") {
+          paste0(" ", and_or, " grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
+        } else if (eval.func("oper",len) == "!=") {
+          paste0(" ", and_or, " ", eval.func("dtlist",len), " != '", eval.func("expre",len), "'")
+        }
       }
     }
-    # dfstart
-    observeEvent(input$test1, {
-      filter.char <- lapply(1:dt_filter_add, FUN = dt_filter.func)
-      output$test <- renderText({c(paste0(filter.char))})
-      # sc_data.df <- eval(parse(text = paste0("subset(sc_data.df, ", )))
+    
+    observeEvent(input$dfstart, {
+      filter.list <- paste0(lapply(1:dt_filter_add$filter, FUN = dt_filter.func), collapse = "")
+      sc_data.df <<- eval(parse(text = 
+                                  paste0("subset(sc_data.df, ",filter.list,")")
+                                  ))
+      output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
     })
 
     observeEvent(input$scstart, {
