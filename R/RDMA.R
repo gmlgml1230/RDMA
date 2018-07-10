@@ -129,14 +129,17 @@ RDMA <- function(){
                                           ),
                                           fluidRow(
                                             column(3,
-                                                   uiOutput("dtfilterborder2")),
+                                                   uiOutput("dtfilterborder")),
                                             column(9,
-                                                   uiOutput("add_dtfilter2"))
-                                          )
+                                                   uiOutput("add_dtfilter"))
+                                          ),
+                                          actionButton(inputId = "dfstart", label = "OK")
                                         )
                        ),
                        actionButton(inputId = "scstart", label = "S&C Start")
                      ),
+                     actionButton(inputId = "test1", label = "test"),
+                     verbatimTextOutput("test"),
                      verbatimTextOutput("scfail"),
                      dataTableOutput("scdata"),
                      hr(),
@@ -375,43 +378,6 @@ RDMA <- function(){
       }
     })
 
-    observeEvent(input$scfilteradd, {
-      if(sc_filter_add$filter < length(scfilter_name())){
-        sc_filter_add$filter <- sc_filter_add$filter + 1
-        if(sc_filter_add$filter >= 1){
-          output$scfilterborder <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
-          })
-          output$add_scfilter <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              scfilter_list.func(input[[paste0("sclist",i)]])
-            })
-          })
-        }
-      }
-    })
-
-    observeEvent(input$scfilterdelete, {
-      if(sc_filter_add$filter > 0){
-        sc_filter_add$filter <- sc_filter_add$filter - 1
-        if(sc_filter_add$filter == 0){
-          output$scfilterborder <- renderUI({})
-          output$add_scfilter <- renderUI({})
-        } else {
-          output$scfilterborder <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
-          })
-          output$add_scfilter <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              scfilter_list.func(input[[paste0("sclist",i)]])
-            })
-          })
-        }
-      }
-    })
-
     scfilter_list.func <- function(select){
       if(any(select %in% "country")){
         tagList(
@@ -454,7 +420,10 @@ RDMA <- function(){
           })
           output$add_dtfilter <- renderUI({
             lapply(1:dt_filter_add$filter, function(i){
-              dtfilter_list.func(input[[paste0("dtlist",i)]])
+              tagList(
+                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
+              )
             })
           })
         }
@@ -474,13 +443,36 @@ RDMA <- function(){
           })
           output$add_dtfilter <- renderUI({
             lapply(1:dt_filter_add$filter, function(i){
-              dtfilter_list.func(input[[paste0("dtlist",i)]])
+              tagList(
+                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
+              )
             })
           })
         }
       }
     })
 
+    dt_filter.func <- function(len){
+      eval.func <- function(...){
+        eval(parse(text = paste0("input$", ...)))
+      }
+      if(eval.func("oper",len) == "~~"){
+        paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ")")
+      } else if (eval.func("oper",len) == "==") {
+        paste0(eval.func("expre",len), " == ", eval.func("dtlist",len) )
+      } else if (eval.func("oper",len) == "!~") {
+        paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
+      } else if (eval.func("oper",len) == "!=") {
+        paste0(eval.func("expre",len), " != ", eval.func("dtlist",len))
+      }
+    }
+    # dfstart
+    observeEvent(input$test1, {
+      filter.char <- lapply(1:dt_filter_add, FUN = dt_filter.func)
+      output$test <- renderText({c(paste0(filter.char))})
+      # sc_data.df <- eval(parse(text = paste0("subset(sc_data.df, ", )))
+    })
 
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
@@ -497,6 +489,7 @@ RDMA <- function(){
                  rowLimit = 5000,
                  walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
         })
+        dt_col_len <<- names(sc_data.df)
         removeModal()
         showModal(text_page("S&C Data 추출 완료"))
         output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
