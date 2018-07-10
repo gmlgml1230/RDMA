@@ -106,7 +106,6 @@ RDMA <- function(){
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
                        shinyWidgets::materialSwitch("scfilter", "SC Filter", status = "info"),
-                       shinyWidgets::materialSwitch("dtfilter", "Data Filter", status = "info"),
                        conditionalPanel(condition = "input.scfilter == true",
                                         wellPanel(
                                           fluidRow(
@@ -121,6 +120,7 @@ RDMA <- function(){
                                           )
                                         )
                        ),
+                       shinyWidgets::materialSwitch("dtfilter", "Data Filter", status = "info"),
                        conditionalPanel(condition = "input.dtfilter == true",
                                         wellPanel(
                                           fluidRow(
@@ -129,9 +129,9 @@ RDMA <- function(){
                                           ),
                                           fluidRow(
                                             column(3,
-                                                   uiOutput("scfilterborder")),
+                                                   uiOutput("dtfilterborder2")),
                                             column(9,
-                                                   uiOutput("add_scfilter"))
+                                                   uiOutput("add_dtfilter2"))
                                           )
                                         )
                        ),
@@ -283,6 +283,7 @@ RDMA <- function(){
 
     sc_data.df <- reactiveValues()
     sc_filter_add <- reactiveValues(filter = 0)
+    dt_filter_add <- reactiveValues(filter = 0)
 
     my_search_analytics <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
       temp_df <- tryCatch({
@@ -314,6 +315,9 @@ RDMA <- function(){
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
 
+    # ----------------------------------------------------------------
+    # SC Filter
+
     scfilter_name <- reactive({
       select_dimension <- input$scdimension
       select_dimension <- if(any(select_dimension %in% "date")){return(select_dimension[!select_dimension %in% "date"])} else {select_dimension}
@@ -332,6 +336,43 @@ RDMA <- function(){
         return(scfiltercode)
       } else {NULL}
 
+    })
+
+    observeEvent(input$scfilteradd, {
+      if(sc_filter_add$filter < length(scfilter_name())){
+        sc_filter_add$filter <- sc_filter_add$filter + 1
+        if(sc_filter_add$filter >= 1){
+          output$scfilterborder <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
+          })
+          output$add_scfilter <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              scfilter_list.func(input[[paste0("sclist",i)]])
+            })
+          })
+        }
+      }
+    })
+
+    observeEvent(input$scfilterdelete, {
+      if(sc_filter_add$filter > 0){
+        sc_filter_add$filter <- sc_filter_add$filter - 1
+        if(sc_filter_add$filter == 0){
+          output$scfilterborder <- renderUI({})
+          output$add_scfilter <- renderUI({})
+        } else {
+          output$scfilterborder <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
+          })
+          output$add_scfilter <- renderUI({
+            lapply(1:sc_filter_add$filter, function(i){
+              scfilter_list.func(input[[paste0("sclist",i)]])
+            })
+          })
+        }
+      }
     })
 
     observeEvent(input$scfilteradd, {
@@ -400,6 +441,46 @@ RDMA <- function(){
       }
     }
 
+    # ----------------------------------------------------------------
+    # Data Filter
+
+    observeEvent(input$dtfilteradd, {
+      if(dt_filter_add$filter < length(names(sc_data.df))){
+        dt_filter_add$filter <- dt_filter_add$filter + 1
+        if(dt_filter_add$filter >= 1){
+          output$dtfilterborder <- renderUI({
+            lapply(1:dt_filter_add$filter, function(i){
+              selectInput(inputId = paste0("dtlist",i), label = "Select Filters", choices = names(sc_data.df))})
+          })
+          output$add_dtfilter <- renderUI({
+            lapply(1:dt_filter_add$filter, function(i){
+              dtfilter_list.func(input[[paste0("dtlist",i)]])
+            })
+          })
+        }
+      }
+    })
+
+    observeEvent(input$dtfilterdelete, {
+      if(dt_filter_add$filter > 0){
+        dt_filter_add$filter <- dt_filter_add$filter - 1
+        if(dt_filter_add$filter == 0){
+          output$dtfilterborder <- renderUI({})
+          output$add_dtfilter <- renderUI({})
+        } else {
+          output$dtfilterborder <- renderUI({
+            lapply(1:dt_filter_add$filter, function(i){
+              selectInput(inputId = paste0("dtlist",i), label = "Select Filters", choices = names(sc_data.df))})
+          })
+          output$add_dtfilter <- renderUI({
+            lapply(1:dt_filter_add$filter, function(i){
+              dtfilter_list.func(input[[paste0("dtlist",i)]])
+            })
+          })
+        }
+      }
+    })
+
 
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
@@ -424,7 +505,7 @@ RDMA <- function(){
     })
 
     output$`sc_data.csv` <- downloadHandler(filename = function(){''},
-                                            content = function(file){write.csv(sc_data.df, file, row.names = FALSE,fileEncoding =  "UTF-8")})
+                                            content = function(file){write.csv(sc_data.df, file, row.names = FALSE)})
 
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
