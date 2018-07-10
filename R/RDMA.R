@@ -105,12 +105,27 @@ RDMA <- function(){
                          column(3,
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
-                       shinyWidgets::materialSwitch("scfilter", "Filter", status = "info"),
+                       shinyWidgets::materialSwitch("scfilter", "SC Filter", status = "info"),
+                       shinyWidgets::materialSwitch("dtfilter", "Data Filter", status = "info"),
                        conditionalPanel(condition = "input.scfilter == true",
                                         wellPanel(
                                           fluidRow(
                                             actionButton(inputId = "scfilteradd",label = "ADD"),
                                             actionButton(inputId = "scfilterdelete",label = "Delete")
+                                          ),
+                                          fluidRow(
+                                            column(3,
+                                                   uiOutput("scfilterborder")),
+                                            column(9,
+                                                   uiOutput("add_scfilter"))
+                                          )
+                                        )
+                       ),
+                       conditionalPanel(condition = "input.dtfilter == true",
+                                        wellPanel(
+                                          fluidRow(
+                                            actionButton(inputId = "dtfilteradd",label = "ADD"),
+                                            actionButton(inputId = "dtfilterdelete",label = "Delete")
                                           ),
                                           fluidRow(
                                             column(3,
