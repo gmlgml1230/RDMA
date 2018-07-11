@@ -469,7 +469,7 @@ RDMA <- function(){
       eval.func <- function(...){
         eval(parse(text = paste0("input$", ...)))
       }
-      
+
       if(len == 1){
         if(eval.func("oper",len) == "~~"){
           paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ")")
@@ -493,10 +493,10 @@ RDMA <- function(){
         }
       }
     }
-    
+
     observeEvent(input$dfstart, {
       filter.list <- paste0(lapply(1:dt_filter_add$filter, FUN = dt_filter.func), collapse = "")
-      sc_data.df <<- eval(parse(text = 
+      sc_data.df <<- eval(parse(text =
                                   paste0("subset(sc_data.df, ",filter.list,")")
                                   ))
       output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
@@ -517,7 +517,6 @@ RDMA <- function(){
                  rowLimit = 5000,
                  walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
         })
-        dt_col_len <<- names(sc_data.df)
         removeModal()
         showModal(text_page("S&C Data 추출 완료"))
         output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
