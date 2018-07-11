@@ -419,13 +419,13 @@ RDMA <- function(){
           lapply(1:dt_filter_add$filter, function(i){
             if(i != 1){
               tagList(
-                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
                 column(5, textInput(inputId = paste0("expre", i), label = "Expression")),
                 column(2, selectInput(inputId = paste0("and_or", i), label = "", choices = c("AND", "OR"), selected = "AND"))
               )
             } else {
               tagList(
-                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
                 column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
               )
             }
@@ -449,13 +449,13 @@ RDMA <- function(){
             lapply(1:dt_filter_add$filter, function(i){
               if(i != 1){
                 tagList(
-                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
                   column(5, textInput(inputId = paste0("expre", i), label = "Expression")),
                   column(2, selectInput(inputId = paste0("and_or", i), label = "", choices = c("AND", "OR"), selected = "AND"))
                 )
               } else {
                 tagList(
-                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!="))),
+                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
                   column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
                 )
               }
@@ -479,6 +479,10 @@ RDMA <- function(){
           paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
         } else if (eval.func("oper",len) == "!=") {
           paste0(eval.func("dtlist",len), " != '", eval.func("expre",len), "'")
+        } else if (eval.func("oper",len) == ">=") {
+          paste0(eval.func("dtlist",len), " >= ", eval.func("expre",len))
+        } else if (eval.func("oper",len) == "<=") {
+          paste0(eval.func("dtlist",len), " <= ", eval.func("expre",len))
         }
       } else {
         if(eval.func("and_or",len) == "AND"){and_or <- "&"} else {and_or <- "|"}
@@ -490,6 +494,10 @@ RDMA <- function(){
           paste0(" ", and_or, " grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
         } else if (eval.func("oper",len) == "!=") {
           paste0(" ", and_or, " ", eval.func("dtlist",len), " != '", eval.func("expre",len), "'")
+        } else if (eval.func("oper",len) == ">=") {
+          paste0(" ", and_or, " ", eval.func("dtlist",len), " >= ", eval.func("expre",len))
+        } else if (eval.func("oper",len) == "<=") {
+          paste0(" ", and_or, " ", eval.func("dtlist",len), " <= ", eval.func("expre",len))
         }
       }
     }
