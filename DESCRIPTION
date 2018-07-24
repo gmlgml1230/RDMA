@@ -20,4 +20,5 @@ Imports: shiny,
     googleAuthR,
     googleAnalyticsR,
     doParallel,
-    foreach
+    foreach,
+    openxlsx

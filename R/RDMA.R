@@ -13,6 +13,7 @@
 #' @import googleAnalyticsR
 #' @import doParallel
 #' @import foreach
+#' @import openxlsx
 #' @importFrom rstudioapi insertText
 #' @importFrom readxl excel_sheets
 
@@ -532,8 +533,8 @@ RDMA <- function(){
       })
     })
 
-    output$`sc_data.csv` <- downloadHandler(filename = function(){''},
-                                            content = function(file){write.xlsx(sc_data.df, file, row.names = FALSE)})
+    output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
+                                             content = function(file){write.xlsx(sc_data.df, file, row.names = FALSE)})
 
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
@@ -718,8 +719,8 @@ RDMA <- function(){
       })
     })
 
-    output$`omniture_data.csv` <- downloadHandler(filename = function(){''},
-                                                  content = function(file){write.csv(omni_data.df, file, row.names = FALSE)})
+    output$`omniture_data.xlsx` <- downloadHandler(filename = function(){''},
+                                                  content = function(file){write.xlsx(omni_data.df, file, row.names = FALSE)})
 
 
     ##### Adwords TAP --------------------------------------------------------------------------------------------------------------------
@@ -815,8 +816,8 @@ RDMA <- function(){
       }
     })
 
-    output$`adwords_data.csv` <- downloadHandler(filename = function(){''},
-                                                 content = function(file){write.csv(Ad_data.df, file, row.names = FALSE)})
+    output$`adwords_data.xlsx` <- downloadHandler(filename = function(){''},
+                                                 content = function(file){write.xlsx(Ad_data.df, file, row.names = FALSE)})
 
 
     ##### Google Analytics ---------------------------------------------------------------------------------------------------------------
@@ -906,8 +907,8 @@ RDMA <- function(){
       })
     })
 
-    output$`ga_data.csv` <- downloadHandler(filename = function(){''},
-                                            content = function(file){write.csv(ga_data.df, file, row.names = FALSE)})
+    output$`ga_data.xlsx` <- downloadHandler(filename = function(){''},
+                                            content = function(file){write.xlsx(ga_data.df, file, row.names = FALSE)})
 
 
   }
