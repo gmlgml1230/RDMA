@@ -533,8 +533,7 @@ RDMA <- function(){
     })
 
     output$`sc_data.csv` <- downloadHandler(filename = function(){''},
-                                            contentType = "charset=UTF-8",
-                                            content = function(file){write.csv(sc_data.df, file, row.names = FALSE)})
+                                            content = function(file){write.csv(sc_data.df, file, row.names = FALSE, fileEncoding = "UTF-8")})
 
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
