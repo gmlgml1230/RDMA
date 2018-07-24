@@ -539,6 +539,7 @@ RDMA <- function(){
     })
 
     output$`sc_data.csv` <- downloadHandler(filename = function(){''},
+                                            contentType = "charset=UTF-8",
                                             content = function(file){write.csv(sc_data.df, file, row.names = FALSE)})
 
 
