@@ -142,7 +142,7 @@ RDMA <- function(){
                      verbatimTextOutput("scfail"),
                      dataTableOutput("scdata"),
                      hr(),
-                     downloadButton("sc_data.csv", "Download")
+                     downloadButton("sc_data.xlsx", "Download")
                    )
       ),
 
