@@ -142,12 +142,11 @@ RDMA <- function(){
                                           actionButton(inputId = "dfstart", label = "OK")
                                         )
                        ),
-                       actionButton(inputId = "scstart", label = "S&C Start")
+                       actionButton(inputId = "scstart", label = "S&C Start"),
+                       downloadButton("sc_data.xlsx", "Download")
                      ),
                      verbatimTextOutput("scfail"),
-                     dataTableOutput("scdata"),
-                     hr(),
-                     downloadButton("sc_data.xlsx", "Download")
+                     dataTableOutput("scdata")
                    )
       ),
 
