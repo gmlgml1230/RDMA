@@ -142,12 +142,11 @@ RDMA <- function(){
                                           actionButton(inputId = "dfstart", label = "OK")
                                         )
                        ),
-                       actionButton(inputId = "scstart", label = "S&C Start")
+                       actionButton(inputId = "scstart", label = "S&C Start"),
+                       downloadButton("sc_data.xlsx", "Download")
                      ),
                      verbatimTextOutput("scfail"),
-                     dataTableOutput("scdata"),
-                     hr(),
-                     downloadButton("sc_data.xlsx", "Download")
+                     dataTableOutput("scdata")
                    )
       ),
 
@@ -539,7 +538,7 @@ RDMA <- function(){
     })
 
     output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
-                                             content = function(file){write.xlsx(sc_data.df, file, row.names = FALSE)})
+                                             content = function(file){write.xlsx(sc_data.df, file = paste0(getwd(), "/sc_data.xlsx"), row.names = FALSE)})
 
 
     ##### Omniture TAP -------------------------------------------------------------------------------------------------------------------
