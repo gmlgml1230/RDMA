@@ -34,14 +34,6 @@ RDMA <- function(){
     }
   }
 
-  data_ck <- function(df_name, text_page, exr){
-    if(!is.reactivevalues(df_name)){
-      exr
-    } else {
-      showModal(text_page("데이터 추출 먼저 해야합니다."))
-    }
-  }
-
   oauth_trycatch <- function(auth_file, exr){
     if(file.exists(auth_file)){
       tryCatch({
@@ -66,15 +58,6 @@ RDMA <- function(){
     gar_auth("sc.httr-oauth")
     website_url <- searchConsoleR::list_websites()$siteUrl
   })
-
-  oauth_trycatch("ga.httr-oauth", {
-    googleAnalyticsR::ga_auth("ga.httr-oauth")
-    ga_id <- googleAnalyticsR::ga_account_list()
-    ga_metric <- googleAnalyticsR::allowed_metric_dim(type = "METRIC")
-    ga_dimension <- googleAnalyticsR::allowed_metric_dim(type = "DIMENSION")
-    ga_segment <- googleAnalyticsR::ga_segment_list()$items
-  })
-
 
   ##### UI -----------------------------------------------------------------------------------------------------------------------------
 
@@ -142,6 +125,7 @@ RDMA <- function(){
                                           actionButton(inputId = "dfstart", label = "OK")
                                         )
                        ),
+                       variablesUI(1),
                        actionButton(inputId = "scstart", label = "S&C Start"),
                        downloadButton("sc_data.xlsx", "Download")
                      ),
@@ -208,198 +192,16 @@ RDMA <- function(){
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
 
-    # ----------------------------------------------------------------
-    # SC Filter
-
-    scfilter_name <- reactive({
-      select_dimension <- input$scdimension
-      select_dimension <- if(any(select_dimension %in% "date")){return(select_dimension[!select_dimension %in% "date"])} else {select_dimension}
-    })
-
-    scfilter_func <- reactive({
-      select_name <- sapply(1:sc_filter_add$filter, function(i){eval(parse(text=paste0("input$sclist",i)))})
-      if(!is.null(select_name)){
-        scfiltercode <- c(
-          if(any(select_name %in% "country") && input$exprecountry != ""){paste0("country",input$opercountry,input$exprecountry)} else {NULL},
-          if(any(select_name %in% "device") && input$expredevice != ""){paste0("device",input$operdevice,input$expredevice)} else {NULL},
-          if(any(select_name %in% "page") && input$exprepage != ""){paste0("page",input$operpage,input$exprepage)} else {NULL},
-          if(any(select_name %in% "query") && input$exprequery != ""){paste0("query",input$operquery,input$exprequery)} else {NULL},
-          if(any(select_name %in% "searchAppearance") && input$expresearch != ""){paste0("searchAppearance",input$opersearch,input$expresearch)} else {NULL}
-        )
-        return(scfiltercode)
-      } else {NULL}
-
-    })
-
-    observeEvent(input$scfilteradd, {
-      if(sc_filter_add$filter < length(scfilter_name())){
-        sc_filter_add$filter <- sc_filter_add$filter + 1
-        if(sc_filter_add$filter >= 1){
-          output$scfilterborder <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
-          })
-          output$add_scfilter <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              scfilter_list.func(input[[paste0("sclist",i)]])
-            })
-          })
-        }
-      }
-    })
-
-    observeEvent(input$scfilterdelete, {
-      if(sc_filter_add$filter > 0){
-        sc_filter_add$filter <- sc_filter_add$filter - 1
-        if(sc_filter_add$filter == 0){
-          output$scfilterborder <- renderUI({})
-          output$add_scfilter <- renderUI({})
-        } else {
-          output$scfilterborder <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              selectInput(inputId = paste0("sclist",i), label = "Select Filters", choices = scfilter_name())})
-          })
-          output$add_scfilter <- renderUI({
-            lapply(1:sc_filter_add$filter, function(i){
-              scfilter_list.func(input[[paste0("sclist",i)]])
-            })
-          })
-        }
-      }
-    })
-
-    scfilter_list.func <- function(select){
-      if(any(select %in% "country")){
-        tagList(
-          column(5, selectInput(inputId = "opercountry", label = "Operator", choices = c("~~","==","!~","!="))),
-          column(5, textInput(inputId = "exprecountry",label = "Expression"))
-        )
-      } else if(any(select %in% "device")) {
-        tagList(
-          column(5, selectInput(inputId = "operdevice", label = "Operator", choices = c("~~","==","!~","!="))),
-          column(5, selectInput(inputId = "expredevice",label = "Expression", choices = c("","DESKTOP","MOBILE","TABLET")))
-        )
-      } else if(any(select %in% "page")) {
-        tagList(
-          column(5, selectInput(inputId = "operpage", label = "Operator", choices = c("~~","==","!~","!="))),
-          column(5, textInput(inputId = "exprepage",label = "Expression"))
-        )
-      } else if(any(select %in% "query")) {
-        tagList(
-          column(5, selectInput(inputId = "operquery", label = "Operator", choices = c("~~","==","!~","!="))),
-          column(5, textInput(inputId = "exprequery",label = "Expression"))
-        )
-      } else if(any(select %in% "searchAppearance")) {
-        tagList(
-          column(5, selectInput(inputId = "opersearch", label = "Operator", choices = c("~~","==","!~","!="))),
-          column(5, selectInput(inputId = "expresearch",label = "Expression", choices = c("","AMP_BLUE_LINK","RICHCARD")))
-        )
-      }
-    }
-
-    # ----------------------------------------------------------------
-    # Data Filter
-
-    observeEvent(input$dtfilteradd, {
-      if(dt_filter_add$filter < length(names(sc_data.df))){
-        dt_filter_add$filter <- dt_filter_add$filter + 1
-        output$dtfilterborder <- renderUI({
-          lapply(1:dt_filter_add$filter, function(i){
-            selectInput(inputId = paste0("dtlist",i), label = "Select Filters", choices = names(sc_data.df))})
-        })
-        output$add_dtfilter <- renderUI({
-          lapply(1:dt_filter_add$filter, function(i){
-            if(i != 1){
-              tagList(
-                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
-                column(5, textInput(inputId = paste0("expre", i), label = "Expression")),
-                column(2, selectInput(inputId = paste0("and_or", i), label = "", choices = c("AND", "OR"), selected = "AND"))
-              )
-            } else {
-              tagList(
-                column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
-                column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
-              )
-            }
-          })
-        })
-      }
-    })
-
-    observeEvent(input$dtfilterdelete, {
-      if(dt_filter_add$filter > 0){
-        dt_filter_add$filter <- dt_filter_add$filter - 1
-        if(dt_filter_add$filter == 0){
-          output$dtfilterborder <- renderUI({})
-          output$add_dtfilter <- renderUI({})
-        } else {
-          output$dtfilterborder <- renderUI({
-            lapply(1:dt_filter_add$filter, function(i){
-              selectInput(inputId = paste0("dtlist",i), label = "Select Filters", choices = names(sc_data.df))})
-          })
-          output$add_dtfilter <- renderUI({
-            lapply(1:dt_filter_add$filter, function(i){
-              if(i != 1){
-                tagList(
-                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
-                  column(5, textInput(inputId = paste0("expre", i), label = "Expression")),
-                  column(2, selectInput(inputId = paste0("and_or", i), label = "", choices = c("AND", "OR"), selected = "AND"))
-                )
-              } else {
-                tagList(
-                  column(5, selectInput(inputId = paste0("oper", i), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))),
-                  column(5, textInput(inputId = paste0("expre", i), label = "Expression"))
-                )
-              }
-            })
-          })
-        }
-      }
-    })
-
-    dt_filter.func <- function(len){
-      eval.func <- function(...){
-        eval(parse(text = paste0("input$", ...)))
-      }
-
-      if(len == 1){
-        if(eval.func("oper",len) == "~~"){
-          paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ")")
-        } else if (eval.func("oper",len) == "==") {
-          paste0(eval.func("dtlist",len), " == '", eval.func("expre",len), "'")
-        } else if (eval.func("oper",len) == "!~") {
-          paste0("grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
-        } else if (eval.func("oper",len) == "!=") {
-          paste0(eval.func("dtlist",len), " != '", eval.func("expre",len), "'")
-        } else if (eval.func("oper",len) == ">=") {
-          paste0(eval.func("dtlist",len), " >= ", eval.func("expre",len))
-        } else if (eval.func("oper",len) == "<=") {
-          paste0(eval.func("dtlist",len), " <= ", eval.func("expre",len))
-        }
-      } else {
-        if(eval.func("and_or",len) == "AND"){and_or <- "&"} else {and_or <- "|"}
-        if(eval.func("oper",len) == "~~"){
-          paste0(" ", and_or, " grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ")")
-        } else if (eval.func("oper",len) == "==") {
-          paste0(" ", and_or, " ", eval.func("dtlist",len), " == '", eval.func("expre",len), "'")
-        } else if (eval.func("oper",len) == "!~") {
-          paste0(" ", and_or, " grepl('", eval.func("expre",len), "' ,", eval.func("dtlist",len), ") = F")
-        } else if (eval.func("oper",len) == "!=") {
-          paste0(" ", and_or, " ", eval.func("dtlist",len), " != '", eval.func("expre",len), "'")
-        } else if (eval.func("oper",len) == ">=") {
-          paste0(" ", and_or, " ", eval.func("dtlist",len), " >= ", eval.func("expre",len))
-        } else if (eval.func("oper",len) == "<=") {
-          paste0(" ", and_or, " ", eval.func("dtlist",len), " <= ", eval.func("expre",len))
-        }
-      }
-    }
-
     observeEvent(input$dfstart, {
       filter.list <- paste0(lapply(1:dt_filter_add$filter, FUN = dt_filter.func), collapse = "")
       sc_data.df <<- eval(parse(text =
                                   paste0("subset(sc_data.df, ",filter.list,")")
                                   ))
       output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+    })
+
+    observeEvent(input$scfilteradd, {
+      callModule(variablesServer, 1)
     })
 
     observeEvent(input$scstart, {
