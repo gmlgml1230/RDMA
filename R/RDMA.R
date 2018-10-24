@@ -209,6 +209,14 @@ RDMA <- function(){
       )
     })
 
+    observeEvent(input$scfilterdelete, {
+      removeUI(
+        selector = paste0('#var', filter_btn$sc_btn)
+      )
+      filter_btn$sc_btn <- filter_btn$sc_btn - 1
+    })
+
+
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
