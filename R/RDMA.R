@@ -102,10 +102,7 @@ RDMA <- function(){
                                             actionButton(inputId = "scfilterdelete",label = "Delete")
                                           ),
                                           fluidRow(
-                                            column(3,
-                                                   uiOutput("scfilterborder")),
-                                            column(9,
-                                                   uiOutput("add_scfilter"))
+                                            tags$div(id = 'scfilter_place')
                                           )
                                         )
                        ),
@@ -125,7 +122,6 @@ RDMA <- function(){
                                           actionButton(inputId = "dfstart", label = "OK")
                                         )
                        ),
-                       variablesUI(1),
                        actionButton(inputId = "scstart", label = "S&C Start"),
                        downloadButton("sc_data.xlsx", "Download")
                      ),
@@ -159,8 +155,9 @@ RDMA <- function(){
     ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
 
     sc_data.df <- reactiveValues()
-    sc_filter_add <- reactiveValues(filter = 0)
-    dt_filter_add <- reactiveValues(filter = 0)
+    filter_btn <- reactiveValues(sc_btn = 0,
+                                 dt_tbn = 0)
+
 
     my_search_analytics <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
       temp_df <- tryCatch({
@@ -201,7 +198,15 @@ RDMA <- function(){
     })
 
     observeEvent(input$scfilteradd, {
-      callModule(variablesServer, 1)
+      filter_btn$sc_btn <- filter_btn$sc_btn + 1
+      btn <- filter_btn$sc_btn
+      callModule(variablesServer, btn)
+
+      insertUI(
+        selector = '#scfilter_place',
+        where = "beforeEnd",
+        ui = variablesUI(btn)
+      )
     })
 
     observeEvent(input$scstart, {
