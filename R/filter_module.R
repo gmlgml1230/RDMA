@@ -72,7 +72,7 @@ variablesServer <- function(input, output, session, scfilter_list.func, select_f
   })
 
   output$add_filter <- renderUI({
-    scfilter_list.func(select_filter.vec[1])
+    scfilter_list.func(ns, select_filter.vec[1])
   })
 }
 
@@ -112,7 +112,7 @@ scfilter_func <- reactive({
 })
 
 
-scfilter_list.func <- function(select.chr){
+scfilter_list.func <- function(ns, select.chr){
   tagList(
     column(5,selectInput(inputId = ns("opercountry"), label = "Operator", choices = c("~~","==","!~","!="))),
     column(5,
