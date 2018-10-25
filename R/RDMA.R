@@ -59,7 +59,9 @@ RDMA <- function(){
     website_url <- searchConsoleR::list_websites()$siteUrl
   })
 
-  ##### UI -----------------------------------------------------------------------------------------------------------------------------
+  # ==============================================================================================================================
+  # UI
+  # ------------------------------------------------------------------------------------------------------------------------------
 
   ui <- miniPage(
     tags$script("(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-117525726-1', 'auto');ga('send', 'pageview')"),
@@ -132,7 +134,15 @@ RDMA <- function(){
     )
   )
 
-  ##### SERVER -------------------------------------------------------------------------------------------------------------------------
+
+  # ==============================================================================================================================
+
+
+
+
+  # ==============================================================================================================================
+  # SERVER
+  # ------------------------------------------------------------------------------------------------------------------------------
 
   server <- function(input, output, session) {
 
@@ -158,7 +168,28 @@ RDMA <- function(){
     filter_btn <- reactiveValues(sc_btn = 0,
                                  dt_tbn = 0)
 
+    scfilter_name <- reactive({
+      select_dimension <- input$scdimension
+      select_dimension <- if(any(select_dimension %in% "date")){return(select_dimension[!select_dimension %in% "date"])} else {select_dimension}
+    })
 
+    # 인증
+    observeEvent(input$scRefresh, {
+      if(!file.exists("sc.httr-oauth")){
+        searchConsoleR::scr_auth("sc.httr-oauth")
+        website_url <- searchConsoleR::list_websites()$siteUrl
+        updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
+        updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
+      }
+    })
+
+    # 인증서 제거
+    observeEvent(input$scremove, {
+      file.remove("sc.httr-oauth")
+      updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
+    })
+
+    # 데이터 추출 (일별 x)
     my_search_analytics <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
       temp_df <- tryCatch({
         search_analytics(siteURL = siteURL,
@@ -175,28 +206,7 @@ RDMA <- function(){
       })
     }
 
-    observeEvent(input$scRefresh, {
-      if(!file.exists("sc.httr-oauth")){
-        searchConsoleR::scr_auth("sc.httr-oauth")
-        website_url <- searchConsoleR::list_websites()$siteUrl
-        updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
-        updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
-      }
-    })
-
-    observeEvent(input$scremove, {
-      file.remove("sc.httr-oauth")
-      updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
-    })
-
-    observeEvent(input$dfstart, {
-      filter.list <- paste0(lapply(1:dt_filter_add$filter, FUN = dt_filter.func), collapse = "")
-      sc_data.df <<- eval(parse(text =
-                                  paste0("subset(sc_data.df, ",filter.list,")")
-                                  ))
-      output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
-    })
-
+    # SC 필터 추가
     observeEvent(input$scfilteradd, {
       filter_btn$sc_btn <- filter_btn$sc_btn + 1
       btn <- filter_btn$sc_btn
@@ -209,6 +219,7 @@ RDMA <- function(){
       )
     })
 
+    # SC 필터 제거
     observeEvent(input$scfilterdelete, {
       removeUI(
         selector = paste0('#var', filter_btn$sc_btn)
@@ -216,7 +227,7 @@ RDMA <- function(){
       filter_btn$sc_btn <- filter_btn$sc_btn - 1
     })
 
-
+    # 데이터 추출
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
@@ -239,10 +250,16 @@ RDMA <- function(){
       })
     })
 
+    # 데이터 추출
     output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
                                              content = function(file){write.xlsx(sc_data.df, file, row.names = FALSE)})
 
   }
+
+  # ==============================================================================================================================
+
+
+
 
   viewer <- dialogViewer("RDMA", width = 1200, height = 800)
   shiny::runGadget(ui, server, viewer = viewer)
