@@ -67,12 +67,12 @@ variablesServer <- function(input, output, session, scfilter_list.func, select_f
     selectInput(
       inputId = ns("filterborder"),
       label = paste0("Select Filters ", strsplit(x = ns(""), split = "-")),
-      choices = c("Choose" = "", select_filter.vec)
+      choices = c("Choose" = "", select_filter.vec())
     )
   })
 
   output$add_filter <- renderUI({
-    scfilter_list.func(ns, select_filter.vec[1])
+    scfilter_list.func(ns, select_filter.vec()[1])
   })
 }
 
