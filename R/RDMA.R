@@ -227,6 +227,10 @@ RDMA <- function(){
       filter_btn$sc_btn <- filter_btn$sc_btn - 1
     })
 
+    observeEvent(input[[NS()]])
+
+
+
     # 데이터 추출
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
