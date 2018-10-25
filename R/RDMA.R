@@ -103,7 +103,9 @@ RDMA <- function(){
                      wellPanel(
                        fluidRow(
                          column(3,
-                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date()))
+                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date())),
+                         column(1,
+                                shinyWidgets::materialSwitch("daily", status = "info"))
                        ),
                        fluidRow(
                          column(9,
