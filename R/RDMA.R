@@ -210,7 +210,7 @@ RDMA <- function(){
     observeEvent(input$scfilteradd, {
       filter_btn$sc_btn <- filter_btn$sc_btn + 1
       btn <- filter_btn$sc_btn
-      callModule(variablesServer, btn)
+      callModule(variablesServer, btn, scfilter_list.func, scfilter_name)
 
       insertUI(
         selector = '#scfilter_place',
