@@ -2,10 +2,12 @@
 % Please edit documentation in R/RDMA.R
 \name{RDMA}
 \alias{RDMA}
-\title{RDMA}
+\title{RDMA
+R Data Manipulation Add in}
 \usage{
 RDMA()
 }
 \description{
 RDMA
+R Data Manipulation Add in
 }
