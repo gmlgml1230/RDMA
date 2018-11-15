@@ -54,6 +54,22 @@ server <- function(input, output, session) {
            FUN.VALUE = character(1))
   }
 
+  scfilter_func <- reactive({
+    select_name <- sapply(X = 1:sc_filter_add$filter,
+                          FUN =  function(i){eval(parse(text=paste0("input$sclist",i)))})
+    if(!is.null(select_name)){
+      scfiltercode <- c(
+        if(any(select_name %in% "country") && input$exprecountry != ""){paste0("country",input$opercountry,input$exprecountry)} else {NULL},
+        if(any(select_name %in% "device") && input$expredevice != ""){paste0("device",input$operdevice,input$expredevice)} else {NULL},
+        if(any(select_name %in% "page") && input$exprepage != ""){paste0("page",input$operpage,input$exprepage)} else {NULL},
+        if(any(select_name %in% "query") && input$exprequery != ""){paste0("query",input$operquery,input$exprequery)} else {NULL},
+        if(any(select_name %in% "searchAppearance") && input$expresearch != ""){paste0("searchAppearance",input$opersearch,input$expresearch)} else {NULL}
+      )
+      return(scfiltercode)
+    } else {NULL}
+
+  })
+
 
   ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
 
