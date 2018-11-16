@@ -62,7 +62,7 @@ RDMA <- function(){
                      wellPanel(
                        fluidRow(
                          column(3,
-                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date())),
+                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date() - 3)),
                          column(7, NULL),
                          column(2,
                                 shinyWidgets::materialSwitch("daily_export", "Daily Export", status = "info", inline = TRUE))
@@ -191,39 +191,64 @@ RDMA <- function(){
     })
 
     # SC 데이터 추출
-    my_search_analytics.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
-      sc.df <- tryCatch({
-        temp.df <- search_analytics(siteURL = siteURL,
-                                    startDate = startDate,
-                                    endDate = endDate,
-                                    dimensions = dimensions,
-                                    dimensionFilterExp = dimensionFilterExp,
-                                    rowLimit = rowLimit,
-                                    walk_data = walk_data) %>% mutate(url = siteURL)
-        if(nrow(temp.df) == 1 && is.na(temp.df$date)){
-          sc_data.df$Error <- c(sc_data.df$Error, siteURL)
-          NULL
-        } else {
-          return(temp.df)
-        }
+    gsc_analytics.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
+      tryCatch({
+        search_analytics(siteURL = siteURL,
+                         startDate = startDate,
+                         endDate = endDate,
+                         dimensions = dimensions,
+                         dimensionFilterExp = dimensionFilterExp,
+                         rowLimit = rowLimit,
+                         walk_data = walk_data) %>% mutate(url = siteURL)
       },
       error = function(e){
-        sc_data.df$Error <- c(sc_data.df$Error, siteURL)
-        NULL
+        print(e)
       })
     }
 
-    # SC 25000줄 씩 일일 추출
-    daily_search_analytics.loop <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
+    gsc_limit_analytics.func <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
+      row_limit.num <- 5000
+
+      repeat{
+        temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
+        cat(row_limit.num, " : ",nrow(temp), "\n")
+        # GSC 데이터 추출 시 에러발생 확인 : Error 발생 시 nrow 사용하면 Null값 출력
+        if(is.null(nrow(temp))){
+          # 해당 문구가 출력되면 Rowlimit이 틀리다는 것이다. 해당 문구 이외엔 Rowlimit과 관계없는 에러
+          if(grepl('numbers of columns of arguments do not match', temp)){
+            row_limit.num <- row_limit.num - 5000
+            temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
+            return(temp)
+          } else {
+            sc_data.df$Error <- c(sc_data.df$Error, siteURL)
+            return(NULL)
+          }
+        } else {
+          if(nrow(temp) >= row_limit.num){
+            row_limit.num <- row_limit.num + 5000
+          } else {
+            return(temp)
+          }
+        }
+
+      }
+    }
+
+    # GSC 일별 추출이며 byBatch 기준으로 최대한 많은 데이터 추출
+    daily_analytics.loop <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
       date_range.vec <- seq(as.Date(startDate), as.Date(endDate), "days")
 
+      temp.func <- function(gsc_analytics.func, siteURL, daily.date, dimensions, dimensionFilterExp, walk_data){
+        gsc_limit_analytics.func(gsc_analytics.func, siteURL, daily.date, daily.date, dimensions, dimensionFilterExp, walk_data)
+      }
+
       lapply(X = date_range.vec,
-             FUN = my_search_analytics.func,
+             FUN = temp.func,
+             gsc_analytics.func = gsc_analytics.func,
              siteURL = siteURL,
              dimensions = dimensions,
              dimensionFilterExp = dimensionFilterExp,
-             rowLimit = 25000,
-             walk_data = )
+             walk_data = 'byBatch') %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
     }
 
     # observeEvent(input$test_button, {
@@ -282,14 +307,25 @@ RDMA <- function(){
         sc_data.df$Error <- NULL
         btn.num <- filter_btn$sc_btn
         tryCatch({
-          sc_data.df$sc.df <- lapply(X = input$scwebsite,
-                                     FUN = my_search_analytics.func,
-                                     startDate = input$scstartdate[1],
-                                     endDate = input$scstartdate[2],
-                                     dimensions = input$scdimension,
-                                     dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
-                                     rowLimit = 25000,
-                                     walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+          if(!input$daily_export){
+            sc_data.df$sc.df <- lapply(X = input$scwebsite,
+                                       FUN = gsc_limit_analytics.func,
+                                       gsc_analytics.func = gsc_analytics.func,
+                                       startDate = input$scstartdate[1],
+                                       endDate = input$scstartdate[2],
+                                       dimensions = input$scdimension,
+                                       dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
+                                       walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+          } else {
+            sc_data.df$sc.df <- lapply(X = input$scwebsite,
+                                       FUN = daily_analytics.loop,
+                                       gsc_analytics.func = gsc_analytics.func,
+                                       startDate = input$scstartdate[1],
+                                       endDate = input$scstartdate[2],
+                                       dimensions = input$scdimension,
+                                       dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
+                                       walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+          }
           print(temp_err)
           removeModal()
           showModal(text_page("S&C Data 추출 완료"))
