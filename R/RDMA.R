@@ -1,20 +1,3 @@
-#' RDMA
-#' R Data Manipulation Add in
-#' @export
-#' @import shiny
-#' @import miniUI
-#' @import dplyr
-#' @import RAdwords
-#' @import RSiteCatalyst
-#' @import shinyWidgets
-#' @import searchConsoleR
-#' @import googleAuthR
-#' @import googleAnalyticsR
-#' @import doParallel
-#' @import foreach
-#' @import openxlsx
-
-
 RDMA <- function(){
 
   options(httr_oauth_cache=T)
@@ -70,7 +53,7 @@ RDMA <- function(){
       miniTabPanel(title = "Search Console",
                    miniContentPanel(
                      fluidRow(
-                       column(6,
+                       column(10,
                               actionButton(inputId = "scRefresh", label = paste0("Authorization : ", oauth_ck("sc.httr-oauth"))),
                               actionButton(inputId = "scremove", label = "Remove Auth")
                        )
@@ -79,7 +62,10 @@ RDMA <- function(){
                      wellPanel(
                        fluidRow(
                          column(3,
-                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date()))
+                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date())),
+                         column(7, NULL),
+                         column(2,
+                                shinyWidgets::materialSwitch("daily_export", "Daily Export", status = "info", inline = TRUE))
                        ),
                        fluidRow(
                          column(9,
@@ -88,8 +74,8 @@ RDMA <- function(){
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
                        # InputID 확인용
-                       verbatimTextOutput('InputID_View'),
-                       actionButton(inputId = "test_button",label = "test"),
+                       # verbatimTextOutput('InputID_View'),
+                       # actionButton(inputId = "test_button",label = "test"),
                        shinyWidgets::materialSwitch("scfilter", "SC Filter", status = "info"),
                        conditionalPanel(condition = "input.scfilter == true",
                                         wellPanel(
@@ -126,7 +112,7 @@ RDMA <- function(){
                    )
       )
     )
-  )
+    )
 
   server <- function(input, output, session) {
 
@@ -181,26 +167,10 @@ RDMA <- function(){
              FUN.VALUE = character(1))
     }
 
-    scfilter_func <- reactive({
-      select_name <- sapply(X = 1:sc_filter_add$filter,
-                            FUN =  function(i){eval(parse(text=paste0("input$sclist",i)))})
-      if(!is.null(select_name)){
-        scfiltercode <- c(
-          if(any(select_name %in% "country") && input$exprecountry != ""){paste0("country",input$opercountry,input$exprecountry)} else {NULL},
-          if(any(select_name %in% "device") && input$expredevice != ""){paste0("device",input$operdevice,input$expredevice)} else {NULL},
-          if(any(select_name %in% "page") && input$exprepage != ""){paste0("page",input$operpage,input$exprepage)} else {NULL},
-          if(any(select_name %in% "query") && input$exprequery != ""){paste0("query",input$operquery,input$exprequery)} else {NULL},
-          if(any(select_name %in% "searchAppearance") && input$expresearch != ""){paste0("searchAppearance",input$opersearch,input$expresearch)} else {NULL}
-        )
-        return(scfiltercode)
-      } else {NULL}
-
-    })
-
-
     ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
 
-    sc_data.df <- reactiveValues()
+    sc_data.df <- reactiveValues(sc.df = NULL,
+                                 Error = NULL)
     filter_btn <- reactiveValues(sc_btn = 0,
                                  dt_tbn = 0)
 
@@ -220,21 +190,40 @@ RDMA <- function(){
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
 
-    # 데이터 추출 (일별 x)
-    my_search_analytics <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
-      temp_df <- tryCatch({
-        search_analytics(siteURL = siteURL,
-                         startDate = startDate,
-                         endDate = endDate,
-                         dimensions = dimensions,
-                         dimensionFilterExp = dimensionFilterExp,
-                         rowLimit = rowLimit,
-                         walk_data = walk_data) %>% mutate(url = siteURL)
+    # SC 데이터 추출
+    my_search_analytics.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
+      sc.df <- tryCatch({
+        temp.df <- search_analytics(siteURL = siteURL,
+                                    startDate = startDate,
+                                    endDate = endDate,
+                                    dimensions = dimensions,
+                                    dimensionFilterExp = dimensionFilterExp,
+                                    rowLimit = rowLimit,
+                                    walk_data = walk_data) %>% mutate(url = siteURL)
+        if(nrow(temp.df) == 1 && is.na(temp.df$date)){
+          sc_data.df$Error <- c(sc_data.df$Error, siteURL)
+          NULL
+        } else {
+          return(temp.df)
+        }
       },
       error = function(e){
-        temp_err <<- c(temp_err, siteURL)
+        sc_data.df$Error <- c(sc_data.df$Error, siteURL)
         NULL
       })
+    }
+
+    # SC 25000줄 씩 일일 추출
+    daily_search_analytics.loop <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
+      date_range.vec <- seq(as.Date(startDate), as.Date(endDate), "days")
+
+      lapply(X = date_range.vec,
+             FUN = my_search_analytics.func,
+             siteURL = siteURL,
+             dimensions = dimensions,
+             dimensionFilterExp = dimensionFilterExp,
+             rowLimit = 25000,
+             walk_data = )
     }
 
     # observeEvent(input$test_button, {
@@ -290,30 +279,31 @@ RDMA <- function(){
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
         gar_auth("sc.httr-oauth")
-        temp_err <- NULL
+        sc_data.df$Error <- NULL
         btn.num <- filter_btn$sc_btn
         tryCatch({
-          sc_data.df <<- isolate({
-            lapply(X = input$scwebsite,
-                   FUN = my_search_analytics,
-                   startDate = input$scstartdate[1],
-                   endDate = input$scstartdate[2],
-                   dimensions = input$scdimension,
-                   dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
-                   rowLimit = 5000,
-                   walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
-          })
+          sc_data.df$sc.df <- lapply(X = input$scwebsite,
+                                     FUN = my_search_analytics.func,
+                                     startDate = input$scstartdate[1],
+                                     endDate = input$scstartdate[2],
+                                     dimensions = input$scdimension,
+                                     dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
+                                     rowLimit = 25000,
+                                     walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+          print(temp_err)
           removeModal()
           showModal(text_page("S&C Data 추출 완료"))
-          output$scdata <- renderDataTable(sc_data.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+          output$scdata <- renderDataTable(sc_data.df$sc.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+        }, error = function(e){
+          print(e)
         })
-        if(!is.null(temp_err)){output$scfail <- renderText({paste0("Fail URL \n",paste(temp_err, collapse = "\n"))})} else {output$scfail <- renderText({})}
+        if(!is.null(sc_data.df$Error)){output$scfail <- renderText({paste0("Fail URL \n",paste(sc_data.df$Error, collapse = "\n"))})} else {output$scfail <- renderText({})}
       })
     })
 
     # 데이터 추출
     output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
-                                             content = function(file){write.xlsx(sc_data.df, file, row.names = FALSE)})
+                                             content = function(file){write.xlsx(sc_data.df$sc.df, file, row.names = FALSE)})
 
   }
 
