@@ -231,7 +231,6 @@ RDMA <- function(){
           if(nrow(temp) >= row_limit.num){
             row_limit.num <- row_limit.num + 5000
           } else {
-            print(temp)
             return(temp)
           }
         }
