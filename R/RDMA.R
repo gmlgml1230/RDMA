@@ -192,6 +192,7 @@ RDMA <- function(){
 
     # SC 데이터 추출
     gsc_analytics.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
+      gar_auth("sc.httr-oauth")
       tryCatch({
         search_analytics(siteURL = siteURL,
                          startDate = startDate,
