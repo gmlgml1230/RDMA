@@ -96,10 +96,7 @@ RDMA <- function(){
                                             actionButton(inputId = "dtfilterdelete",label = "Delete")
                                           ),
                                           fluidRow(
-                                            column(3,
-                                                   uiOutput("dtfilterborder")),
-                                            column(9,
-                                                   uiOutput("add_dtfilter"))
+                                            tags$div(id = 'datafilter_place')
                                           ),
                                           actionButton(inputId = "dfstart", label = "OK")
                                         )
@@ -132,20 +129,6 @@ RDMA <- function(){
 
     }
 
-    # Dimension 이 Date만 있을 땐 NA가 나오기 때문에 해당 부분 NULL로 표현하게끔 수정해야함
-    scfilter_name <- reactive({
-      select_dimension <- input$scdimension
-      select_dimension <- if(any(select_dimension %in% "date")){
-        if(length(select_dimension) == 1){
-          return(NULL)
-        } else {
-          return(select_dimension[!select_dimension %in% "date"])
-        }
-      } else {
-        select_dimension
-      }
-    })
-
     scfilter.func <- function(btn.num){
       vapply(X = 1:btn.num,
              FUN = function(x){
@@ -167,12 +150,43 @@ RDMA <- function(){
              FUN.VALUE = character(1))
     }
 
+    dtfilter.func <- function(btn.num){
+      vapply(X = 11:btn.num,
+             FUN = function(x){
+               dimension.chr <- input[[NS(x, "filterborder")]]
+               operator.chr <- input[[NS(x, "operator")]]
+               expression.chr <- input[[NS(x, "expression")]]
+               and_or.chr <- input[[NS(x, "and_or")]]
+
+               if(is.null(and_or.chr)){
+                 and_or.chr <- " "
+               } else {
+                 if(and_or.chr == "AND"){and_or.chr <- "&"} else {and_or.chr <- "|"}
+               }
+
+               if(operator.chr == "~~"){
+                 paste0(and_or.chr, " grepl('", expression.chr, "', ", dimension.chr, ") ")
+               } else if(operator.chr == "=="){
+                 paste0(and_or.chr, " ", dimension.chr, " == '", expression.chr, "' ")
+               } else if(operator.chr == "!~"){
+                 paste0(and_or.chr, " grepl('", expression.chr, "', ", dimension.chr, ") == 0 ")
+               } else if(operator.chr == "!="){
+                 paste0(and_or.chr, " ", dimension.chr, " != '", expression.chr, "' ")
+               } else if(operator.chr == ">="){
+                 paste0(and_or.chr, " ", dimension.chr, " >= ", expression.chr, " ")
+               } else if(operator.chr == "<="){
+                 paste0(and_or.chr, " ", dimension.chr, " <= ", expression.chr, " ")
+               }
+             },
+             FUN.VALUE = character(1)) %>% paste(., collapse = " ")
+    }
+
     ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
 
     sc_data.df <- reactiveValues(sc.df = NULL,
                                  Error = NULL)
     filter_btn <- reactiveValues(sc_btn = 0,
-                                 dt_tbn = 0)
+                                 dt_btn = 10)
 
     # 인증
     observeEvent(input$scRefresh, {
@@ -267,17 +281,17 @@ RDMA <- function(){
 
     # observeEvent(input$test_button, {
     #   output$InputID_View <- renderText({
-    #     filter_btn$sc_btn
+    #     c(dtfilter.func())
     #   })
     # })
 
     # SC 필터 추가
     observeEvent(input$scfilteradd, {
-      if(filter_btn$sc_btn < length(scfilter_name())){
+      if(filter_btn$sc_btn < 5){
         filter_btn$sc_btn <- filter_btn$sc_btn + 1
         btn <- filter_btn$sc_btn
 
-        callModule(variablesServer, btn, scfilter_name)
+        callModule(variablesServer, btn, c("country","device","page","query","searchAppearance"))
 
         insertUI(
           selector = '#scfilter_place',
@@ -310,6 +324,34 @@ RDMA <- function(){
           selector = paste0('#var', filter_btn$sc_btn)
         )
         filter_btn$sc_btn <- filter_btn$sc_btn - 1
+      }
+    })
+
+    # Data 필터 추가
+    observeEvent(input$dtfilteradd, {
+      filter_btn$dt_btn <- filter_btn$dt_btn + 1
+      data_btn <- filter_btn$dt_btn
+
+      callModule(variablesServer, data_btn, names(sc_data.df$sc.df), FALSE)
+
+      insertUI(
+        selector = '#datafilter_place',
+        where = "beforeEnd",
+        ui = variablesUI(data_btn, FALSE)
+      )
+
+      if(data_btn >= 12){
+        callModule(variablesServer_and_or, data_btn)
+      }
+    })
+
+    # Data 필터 제거
+    observeEvent(input$dtfilterdelete, {
+      if(filter_btn$dt_btn > 10){
+        removeUI(
+          selector = paste0('#var_data', filter_btn$dt_btn)
+        )
+        filter_btn$dt_btn <- filter_btn$dt_btn - 1
       }
     })
 
@@ -351,6 +393,16 @@ RDMA <- function(){
       })
     })
 
+    # 데이터 전처리
+    observeEvent(input$dfstart, {
+      tryCatch({
+        sc_data.df$sc.df <- eval(parse(text = paste0("subset(sc_data.df$sc.df, ",dtfilter.func(filter_btn$dt_btn), ")")))
+      }, error = function(e){
+        NULL
+      })
+
+    })
+
     # 데이터 추출
     output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
                                              content = function(file){write.xlsx(sc_data.df$sc.df, file, row.names = FALSE)})
@@ -361,3 +413,4 @@ RDMA <- function(){
   shiny::runGadget(ui, server, viewer = viewer)
 
 }
+
