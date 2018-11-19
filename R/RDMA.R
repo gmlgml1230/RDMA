@@ -210,11 +210,12 @@ RDMA <- function(){
     gsc_limit_analytics.func <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
       row_limit.num <- 5000
 
+      # Google SearchConsole API에서 추출하고자 하는 데이터의 양이 얼마인지 이전에 제공해주질 않아 RowLimit을 정확히 판단 할 수 없다.
+      # 해당 기간 및 설정에 따른 데이터양에 따라 RowLimit을 변경시켜주어야하는데 추출을해야 확인 가능하기 때문에 이와 같이 루프를 실행한다.
       repeat{
         temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
         cat(row_limit.num, " : ",nrow(temp), "\n")
 
-        if(nrow(temp) == 1 & is.na(temp$date)){temp <- 'Error'}
         # GSC 데이터 추출 시 에러발생 확인 : Error 발생 시 nrow 사용하면 Null값 출력
         if(is.null(nrow(temp))){
           # 해당 문구가 출력되면 Rowlimit이 틀리다는 것이다. 해당 문구 이외엔 Rowlimit과 관계없는 에러
@@ -228,10 +229,19 @@ RDMA <- function(){
             return(temp)
           }
         } else {
-          if(nrow(temp) >= row_limit.num){
-            row_limit.num <- row_limit.num + 5000
+          if(nrow(temp) != 1){
+            if(nrow(temp) >= row_limit.num){
+              row_limit.num <- row_limit.num + 5000
+            } else {
+              return(temp)
+            }
           } else {
-            return(temp)
+            # url은 해당 url이나 그 외의 값이 NA인 경우로 그것 또한 에러에 포함 시키도록한다.
+            if(is.na(temp$date)){
+              sc_data.df$Error <- c(sc_data.df$Error, siteURL)
+              temp <- NULL
+              return(temp)
+            }
           }
         }
 
