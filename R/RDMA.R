@@ -222,7 +222,8 @@ RDMA <- function(){
             return(temp)
           } else {
             sc_data.df$Error <- c(sc_data.df$Error, siteURL)
-            return(NULL)
+            temp <- NULL
+            return(temp)
           }
         } else {
           if(nrow(temp) >= row_limit.num){
