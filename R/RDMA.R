@@ -213,6 +213,8 @@ RDMA <- function(){
       repeat{
         temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
         cat(row_limit.num, " : ",nrow(temp), "\n")
+
+        if(nrow(temp) == 1 & is.na(temp$date)){temp <- 'Error'}
         # GSC 데이터 추출 시 에러발생 확인 : Error 발생 시 nrow 사용하면 Null값 출력
         if(is.null(nrow(temp))){
           # 해당 문구가 출력되면 Rowlimit이 틀리다는 것이다. 해당 문구 이외엔 Rowlimit과 관계없는 에러
@@ -229,6 +231,7 @@ RDMA <- function(){
           if(nrow(temp) >= row_limit.num){
             row_limit.num <- row_limit.num + 5000
           } else {
+            print(temp)
             return(temp)
           }
         }
