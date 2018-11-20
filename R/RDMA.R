@@ -102,7 +102,8 @@ RDMA <- function(){
                                           fluidRow(
                                             tags$div(id = 'datafilter_place')
                                           ),
-                                          actionButton(inputId = "dfstart", label = "OK")
+                                          actionButton(inputId = "dfstart", label = "OK"),
+                                          actionButton(inputId = "dfunique", label = "Unique")
                                         )
                        ),
                        actionButton(inputId = "scstart", label = "S&C Start"),
@@ -188,6 +189,7 @@ RDMA <- function(){
     ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
 
     sc_data.df <- reactiveValues(sc.df = NULL,
+                                 colname = NULL,
                                  Error = NULL)
     filter_btn <- reactiveValues(sc_btn = 0,
                                  dt_btn = 10)
@@ -275,13 +277,18 @@ RDMA <- function(){
             temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
             return(temp)
           } else {
-            sc_data.df$Error <- c(sc_data.df$Error, siteURL)
-            temp <- NULL
-            return(temp)
+            if(grepl('Invalid Credentials', temp)){
+              temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
+              return(temp)
+            } else {
+              sc_data.df$Error <- c(sc_data.df$Error, siteURL)
+              temp <- NULL
+              return(temp)
+            }
           }
         } else {
           if(nrow(temp) != 1){
-            if(nrow(temp) >= row_limit.num){
+            if(nrow(temp) >= row_limit.num & row_limit.num < 95000){
               row_limit.num <- row_limit.num + 5000
             } else {
               return(temp)
@@ -383,7 +390,7 @@ RDMA <- function(){
       filter_btn$dt_btn <- filter_btn$dt_btn + 1
       data_btn <- filter_btn$dt_btn
 
-      callModule(variablesServer, data_btn, names(sc_data.df$sc.df), FALSE)
+      callModule(variablesServer, data_btn, sc_data.df$colname, FALSE)
 
       insertUI(
         selector = '#datafilter_place',
@@ -460,6 +467,7 @@ RDMA <- function(){
           removeModal()
           showModal(text_page("S&C Data 추출 완료"))
           output$scdata <- renderDataTable(sc_data.df$sc.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+          sc_data.df$colname <- names(sc_data.df$sc.df)
         }, error = function(e){
           print(e)
         })
@@ -474,7 +482,15 @@ RDMA <- function(){
       }, error = function(e){
         NULL
       })
+    })
 
+    # 데이터 중복 처리
+    observeEvent(input$dfunique, {
+      groub.vec <- sc_data.df$colname[sc_data.df$colname %in% c("date", "country", "device", "page", "query", "countryName", "url")]
+      summarise.vec <- sc_data.df$colname[sc_data.df$colname %in% c("clicks", "impressions", "ctr", "position")]
+      sc_data.df$sc.df <- eval(parse(text = paste0("sc_data.df$sc.df %>% group_by(",
+                                                   paste0(groub.vec, collapse = ", "), ") %>% summarise(",
+                                                   paste0(summarise.vec, " = sum(", summarise.vec, ")", collapse = ", "), ")")))
     })
 
     # 데이터 추출
