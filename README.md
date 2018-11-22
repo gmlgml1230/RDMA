@@ -56,6 +56,6 @@ install_github('gmlgml1230/RDMA', ref = 'gsc')
 6. Console log
       - 네모 칸 왼쪽 RowLimit, 오른쪽 데이터 추출량
       
-![](assets/markdown-img-paste-20181122192957800.png)
+![](assets/markdown-img-paste-2018112219380723.png)
 
-![](assets/markdown-img-paste-20181122193128566.png)
+![](assets/markdown-img-paste-20181122194015561.png)
