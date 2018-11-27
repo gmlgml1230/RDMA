@@ -1,3 +1,16 @@
+#' RDMA
+#' R Data Manipulation Add in
+#' @export
+#' @import shiny
+#' @import miniUI
+#' @import dplyr
+#' @import shinyWidgets
+#' @import searchConsoleR
+#' @import googleAuthR
+#' @import doParallel
+#' @import foreach
+#' @import openxlsx
+
 RDMA <- function(){
 
   options(httr_oauth_cache=T)
@@ -62,7 +75,7 @@ RDMA <- function(){
                      wellPanel(
                        fluidRow(
                          column(3,
-                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 7, end = Sys.Date() - 3)),
+                                dateRangeInput(inputId = "scstartdate", label = "Date Range", start = Sys.Date() - 10, end = Sys.Date() - 4)),
                          column(7, NULL),
                          column(2,
                                 fluidRow(
@@ -245,7 +258,7 @@ RDMA <- function(){
         if(nrow(temp) != 1){
           return(temp)
         } else {
-          if(is.na(temp$date)){
+          if(is.na(temp$clicks)){
             sc_data.df$Error <- c(sc_data.df$Error, siteURL)
             temp <- NULL
             return(temp)
@@ -295,7 +308,7 @@ RDMA <- function(){
             }
           } else {
             # url은 해당 url이나 그 외의 값이 NA인 경우로 그것 또한 에러에 포함 시키도록한다.
-            if(is.na(temp$date)){
+            if(is.na(temp$clicks)){
               sc_data.df$Error <- c(sc_data.df$Error, siteURL)
               temp <- NULL
               return(temp)
@@ -487,10 +500,8 @@ RDMA <- function(){
     # 데이터 중복 처리
     observeEvent(input$dfunique, {
       groub.vec <- sc_data.df$colname[sc_data.df$colname %in% c("date", "country", "device", "page", "query", "countryName", "url")]
-      summarise.vec <- sc_data.df$colname[sc_data.df$colname %in% c("clicks", "impressions", "ctr", "position")]
-      sc_data.df$sc.df <- eval(parse(text = paste0("sc_data.df$sc.df %>% group_by(",
-                                                   paste0(groub.vec, collapse = ", "), ") %>% summarise(",
-                                                   paste0(summarise.vec, " = sum(", summarise.vec, ")", collapse = ", "), ")")))
+      sc_data.df$sc.df <- eval(parse(text = paste0("sc_data.df$sc.df %>% mutate(totalposition = clicks * impressions) %>% group_by(",
+                                                   paste0(groub.vec, collapse = ", "), ") %>% summarise(clicks = sum(clicks), impressions = sum(impressions), ctr = clicks/impressions, position = sum(totalposition)/impressions)")))
     })
 
     # 데이터 추출
@@ -503,4 +514,3 @@ RDMA <- function(){
   shiny::runGadget(ui, server, viewer = viewer)
 
 }
-
