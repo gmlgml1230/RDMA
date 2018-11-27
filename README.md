@@ -1,96 +1,61 @@
-## R Add In RDMA 설치방법 & 사용가이드
-   
-## R-Project Download
+# RDMA Update
 
-https://www.r-project.org/
+## GSC RDMA Package Download
 
-![image](https://user-images.githubusercontent.com/36947676/38477309-d78b77c2-3bec-11e8-989f-f852a20bbadf.png)
+```
+- 기존 RDMA
+library(devtools)
+install_github('gmlgml1230/RDMA')
 
-- 한국-서울대 R-project 설치 (다른것을 설치해도 괜찮음)
+- GSC RDMA
+library(devtools)
+install_github('gmlgml1230/RDMA', ref = 'gsc')
+```
 
-![image](https://user-images.githubusercontent.com/36947676/38477414-5cc2f032-3bed-11e8-9361-04f41971c7bc.png)
+- 기존의 RDMA에는 GSC가 업데이트되어 있지 않음
+- GSC RDMA에는 Adwords, Omniture, Analytics를 제외 후 GSC만 있음
 
-- 해당 OS에 맞게 선택
+## Update List
 
-![image](https://user-images.githubusercontent.com/36947676/38478854-60d96440-3bf6-11e8-90d4-63f8b3b60b4a.png)
+1. Adwords, Omniture, Google Analytics Tap 제거
+    - 기존 코드가 너무 길고 정리되어있지 유지보수의 어려움이 있기 때문에 GSC만 남기고 모두 제외 시켰습니다.
+    - 이전의 Adwords, Omniture, Analytics를 사용하고자 한다면 기존의 RDMA를 다운로드하여 사용하면 됩니다.
 
-- Base 선택
+2. GSC API 업데이트 사항
+    - GSC API 업데이트로 많은 데이터 추출이 가능해졌습니다.
+    - 데이터 추출 기준 : byBatch, byDate
+      > byDate : 일 별로 5000개의 데이터를 추출하며, byBatch보다 Clicks = 0 인 데이터에 대해 더 많은 Impression을 가집니다.  
+      > byBatch : 전체 기간에 대해 RowLimit 갯수의 데이터를 가지고 올 수 있으나, 설정 기간의 데이터양을 알 수 없기 때문에(Google API에서 제공하지 않음) RowLimit을 점차 증가시키면서 데이터를 추출해야한다.
 
-![image](https://user-images.githubusercontent.com/36947676/38480176-e9bc17b4-3bfe-11e8-8280-b7d100653646.png)
+3. GSC RDMA 업데이트 사항
+    - 데이터 추출 방법 추가
+      > 1. 설정 기간에대해 5000개의 데이터 추출(기존 방식과 동일)
+      >     - 데이터 추출 속도가 가장 빠릅니다.
+      > 2. 설정 기간에대해 최대 10만개까지 데이터 추출
+      >     - 설정 기간의 데이터양이 총 10만개라면 최대 30분정도가 걸립니다
+      > 3. 설정 기간에대해 일 별 5000개씩 데이터 추출
+      > 4. 설정 기간에대해 일 별 최대 데이터 추출
+      >     - 일 별 데이터가 5000개이상일 경우 일 별 최대 10만개까지 데이터 추출
 
-## R-Studio Download
+    - 데이터 추출 방법 선택 기준
+      > - 데이터의 양이 많이 필요없을 경우 1번을 선택  
+      > - 데이터 추출 기간이 길면 2번, 데이터 추출 기간이 약 2달 정도인데 데이터가 많을 것으로 예상된다면, 4번이 좀 더 빠를 수 있습니다.
 
-https://www.rstudio.com/products/rstudio/download/
+![](assets/markdown-img-paste-20181122192427722.png)          
 
-- 해당 OS에 맞게 선택
+4. 필터링 기능 수정
+    - 기존 필터기능의 필터 추가 및 제거 시 기록해둔 정보가 지워지는 현상 수정
 
-![image](https://user-images.githubusercontent.com/36947676/38480229-3ffa14f0-3bff-11e8-9d79-710b2a5d6b1d.png)
+5. 데이터 중복 제거
+    - 데이터 추출 기준을 일 별로 선택했다면 같은 기준을 가진 데이터가 많아져 다운로드 속도가 오래 걸릴 수 있습니다. 일 별 데이터 추출 시 Data Filter안에있는 unique버튼을 클릭하면 데이터 중복 처리를 진행합니다.  
+    - ctr : Total Clicks / Total Impressions  
+    - position : Total Position(Impressions*Position) 생성 후 Total Position /  Total Impressions  
+    
+![](assets/markdown-img-paste-2018112219252335.png)
 
-## R Package Install
+6. Console log
+      - 네모 칸 왼쪽 RowLimit, 오른쪽 데이터 추출량
+      
+![](assets/markdown-img-paste-2018112219380723.png)
 
-- devtools (github 내의 Package install 시 필요)
-
-![image](https://user-images.githubusercontent.com/36947676/38480605-7620d3b4-3c01-11e8-8dd2-256ce7fcb644.png)
-
-- RDMA
-
-library(devtools)  
-install_github("gmlgml1230/RDMA")  
-library(RDMA)  
-![image](https://user-images.githubusercontent.com/36947676/38480763-6096133c-3c02-11e8-8f09-4ed8966e2144.png)
-
-- RDMA Add in 확인
-
-![image](https://user-images.githubusercontent.com/36947676/38480794-877a3316-3c02-11e8-9188-c3e0a7a43051.png)
-
-
-## RDMA Omniture
-
-- Omniture Login
-
-![image](https://user-images.githubusercontent.com/36947676/38481107-1761cb28-3c04-11e8-97d4-8392f573779a.png)  
-ID & Pass Word 입력 후 OK 클릭  
-![image](https://user-images.githubusercontent.com/36947676/38481966-43883bd4-3c08-11e8-9973-82a94a3812c4.png)  
-![image](https://user-images.githubusercontent.com/36947676/38481141-4018726a-3c04-11e8-85b9-0751fdab7aa9.png)  
-  
-- Data Update (Metric & Element & Segment 값을 처음 한 번만 업데이트하면되며 업데이트가 필요할 때 해당 국가 선택 후 사용)  
-  
-![image](https://user-images.githubusercontent.com/36947676/38481342-24ed94c4-3c05-11e8-9187-8dd82017d8a1.png)  
-![image](https://user-images.githubusercontent.com/36947676/38481186-77a8601e-3c04-11e8-8ffa-4129b99e9a4b.png)  
-
-- Data Extract (Date & Country Name & Metric Name & Element Name & Segment Name 선택 후 Omniture Start 클릭)  
-(Segment 없을 시 생략 가능)  
-  
-![image](https://user-images.githubusercontent.com/36947676/38481447-d331296a-3c05-11e8-8f0c-8ae678619117.png)  
-![image](https://user-images.githubusercontent.com/36947676/38481641-c128bf34-3c06-11e8-8bca-ba5ec3dd0955.png)  
-  
-- 추출 데이터 확인 및 다운로드  
-  
-![image](https://user-images.githubusercontent.com/36947676/38481669-ee1bc4fa-3c06-11e8-8f10-2fc3005a7d66.png)  
-![image](https://user-images.githubusercontent.com/36947676/38481694-0b20abec-3c07-11e8-936c-cd4560c34e98.png)  
-![image](https://user-images.githubusercontent.com/36947676/38482441-448ddb7c-3c0a-11e8-8438-b28bc535f205.png)  
-
-## RDMA Adwords
-
-- Adwords 인증 (No : 클릭 시 인증창 활성화, OK : 클릭 시 반응 없음)
-  
-![image](https://user-images.githubusercontent.com/36947676/38482919-1916c95c-3c0c-11e8-962b-74ba90ff71f4.png)  
-Client ID & Client Secret & Developer Token 입력 후 OK 클릭  
-![image](https://user-images.githubusercontent.com/36947676/38482945-2c0b3688-3c0c-11e8-95c7-40575daed823.png)  
-해당 계정 선택  
-![image](https://user-images.githubusercontent.com/36947676/38485677-9ba56b9a-3c15-11e8-8241-8a4df4c2d761.png)  
-![image](https://user-images.githubusercontent.com/36947676/38485715-bd69dc98-3c15-11e8-8982-496a74659034.png)  
-![image](https://user-images.githubusercontent.com/36947676/38485744-d61f3d0a-3c15-11e8-8306-e6d8fbeacfaa.png)  
-위의 값(Client Token) 입력
-![image](https://user-images.githubusercontent.com/36947676/38485640-7bb082e8-3c15-11e8-9571-e2d2b0638538.png)  
-![image](https://user-images.githubusercontent.com/36947676/38485770-f0e6def4-3c15-11e8-8083-eb373357aa75.png)  
-  
-- Date & Report Name & Metric Name & Client Customer ID 선택 후 Date Extract  
-  
-![image](https://user-images.githubusercontent.com/36947676/38486803-070e1d16-3c19-11e8-88b9-0168f144c132.png)  
-![image](https://user-images.githubusercontent.com/36947676/38486814-14fccd28-3c19-11e8-8553-96dfb5a60753.png)  
-  
-- 추출 데이터 확인 및 다운로드  
-  
-![image](https://user-images.githubusercontent.com/36947676/38486868-41686408-3c19-11e8-9b03-454cb88ec24b.png)
-![image](https://user-images.githubusercontent.com/36947676/38486933-72044fb4-3c19-11e8-89e0-d683947b76be.png)
+![](assets/markdown-img-paste-20181122194015561.png)
