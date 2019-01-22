@@ -443,7 +443,7 @@ RDMA <- function(){
                                          dimensions = input$scdimension,
                                          dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
                                          rowLimit = 5000,
-                                         walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+                                         walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0) %>% data.frame(.,check.names = FALSE)
             } else {
               sc_data.df$sc.df <- lapply(X = input$scwebsite,
                                          FUN = gsc_limit_analytics.func,
@@ -452,7 +452,7 @@ RDMA <- function(){
                                          endDate = input$scstartdate[2],
                                          dimensions = input$scdimension,
                                          dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
-                                         walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+                                         walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0) %>% data.frame(.,check.names = FALSE)
             }
           } else {
             if(!input$extract_method2){
@@ -464,7 +464,7 @@ RDMA <- function(){
                                          dimensions = input$scdimension,
                                          dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
                                          walk_data = "byBatch",
-                                         min_row.log = TRUE) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+                                         min_row.log = TRUE) %>% do.call(., what = rbind) %>% replace(is.na(.), 0) %>% data.frame(.,check.names = FALSE)
             } else {
               sc_data.df$sc.df <- lapply(X = input$scwebsite,
                                          FUN = daily_analytics.loop,
@@ -474,7 +474,7 @@ RDMA <- function(){
                                          dimensions = input$scdimension,
                                          dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
                                          walk_data = "byBatch",
-                                         min_row.log = FALSE) %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+                                         min_row.log = FALSE) %>% do.call(., what = rbind) %>% replace(is.na(.), 0) %>% data.frame(.,check.names = FALSE)
             }
           }
           removeModal()
