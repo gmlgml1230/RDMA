@@ -436,7 +436,7 @@ RDMA <- function(){
         tryCatch({
           if(!input$extract_method1){
             if(!input$extract_method2){
-              sc_data.df$sc.df <- lapply(X = input$scwebsite,
+              sc_data.df$sc.df <<- lapply(X = input$scwebsite,
                                          FUN = gsc_analytics_error.func,
                                          startDate = input$scstartdate[1],
                                          endDate = input$scstartdate[2],
@@ -445,7 +445,7 @@ RDMA <- function(){
                                          rowLimit = 5000,
                                          walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0) %>% data.frame(.,check.names = FALSE)
             } else {
-              sc_data.df$sc.df <- lapply(X = input$scwebsite,
+              sc_data.df$sc.df <<- lapply(X = input$scwebsite,
                                          FUN = gsc_limit_analytics.func,
                                          gsc_analytics.func = gsc_analytics.func,
                                          startDate = input$scstartdate[1],
@@ -456,7 +456,7 @@ RDMA <- function(){
             }
           } else {
             if(!input$extract_method2){
-              sc_data.df$sc.df <- lapply(X = input$scwebsite,
+              sc_data.df$sc.df <<- lapply(X = input$scwebsite,
                                          FUN = daily_analytics.loop,
                                          gsc_analytics.func = gsc_analytics.func,
                                          startDate = input$scstartdate[1],
@@ -466,7 +466,7 @@ RDMA <- function(){
                                          walk_data = "byBatch",
                                          min_row.log = TRUE) %>% do.call(., what = rbind) %>% replace(is.na(.), 0) %>% data.frame(.,check.names = FALSE)
             } else {
-              sc_data.df$sc.df <- lapply(X = input$scwebsite,
+              sc_data.df$sc.df <<- lapply(X = input$scwebsite,
                                          FUN = daily_analytics.loop,
                                          gsc_analytics.func = gsc_analytics.func,
                                          startDate = input$scstartdate[1],
