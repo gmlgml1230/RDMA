@@ -299,7 +299,9 @@ RDMA <- function(){
                          dimensions = dimensions,
                          dimensionFilterExp = dimensionFilterExp,
                          rowLimit = rowLimit,
-                         walk_data = walk_data) %>% mutate(url = siteURL)
+                         walk_data = walk_data) %>% 
+          mutate(url = siteURL) %>% 
+          filter(!is.na(date))
       },
       error = function(e){
         temp_err <<- c(temp_err, siteURL)
