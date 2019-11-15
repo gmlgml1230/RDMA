@@ -39,7 +39,7 @@ RDMA <- function(){
   element_null_ck <- function(..., element_name, text_page, exr){
     null_ck <- vapply(list(...), is.null, TRUE)
     if(any(null_ck)){
-      showModal(text_page(paste0(paste0(element_name[null_ck], collapse = " , "), " 을(를) 선택해야 합니다.")))
+      showModal(text_page(paste0(paste0(element_name[null_ck], collapse = " , "), " Select atleast one ")))
     } else {
       exr
     }
@@ -431,7 +431,7 @@ RDMA <- function(){
     # 데이터 추출
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
-        showModal(text_page("잠시만 기다려주세요...", buffer = TRUE))
+        showModal(text_page("Please wait...", buffer = TRUE))
         gar_auth("sc.httr-oauth")
         sc_data.df$Error <- NULL
         btn.num <- filter_btn$sc_btn
@@ -480,7 +480,7 @@ RDMA <- function(){
             }
           }
           removeModal()
-          showModal(text_page("S&C Data 추출 완료"))
+          showModal(text_page("S&C Data Export Completed"))
           output$scdata <- renderDataTable(sc_data.df$sc.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
           sc_data.df$colname <- names(sc_data.df$sc.df)
         }, error = function(e){
