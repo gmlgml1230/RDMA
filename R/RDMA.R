@@ -15,7 +15,7 @@
 RDMA <- function(){
   
   options(httr_oauth_cache=T)
-  # ShinyÏóêÏÑú 5MBÏùò Ï†úÌïúÏùÑ Ïû°ÏïÑÎÜìÏùÄÍ±∏ 30MBÎ°ú ÎäòÎ¶∞ Í≤É
+  # Shiny?óê?Ñú 5MB?ùò ?†ú?ïú?ùÑ ?û°?ïÑ?Üì??ÄÍ±? 30MBÎ°? ?äòÎ¶? Í≤?
   options(shiny.maxRequestSize = 30 * 1024 ^ 2)
   
   oauth_ck <- function(auth_file){
@@ -91,7 +91,7 @@ RDMA <- function(){
                          column(3,
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
-                       # InputID ÌôïÏù∏Ïö©
+                       # InputID ?ôï?ù∏?ö©
                        # verbatimTextOutput('InputID_View'),
                        # actionButton(inputId = "test_button",label = "test"),
                        shinyWidgets::materialSwitch("scfilter", "SC Filter", status = "info"),
@@ -124,7 +124,7 @@ RDMA <- function(){
                        downloadButton("sc_data.xlsx", "Download")
                      ),
                      verbatimTextOutput("scfail"),
-                     dataTableOutput("scdata")
+                     DT::dataTableOutput("scdata")
                    )
       )
     )
@@ -208,7 +208,7 @@ RDMA <- function(){
     filter_btn <- reactiveValues(sc_btn = 0,
                                  dt_btn = 10)
     
-    # Ïù∏Ï¶ù
+    # ?ù∏Ï¶?
     observeEvent(input$scRefresh, {
       if(!file.exists("sc.httr-oauth")){
         searchConsoleR::scr_auth("sc.httr-oauth")
@@ -218,7 +218,7 @@ RDMA <- function(){
       }
     })
     
-    # Ïù∏Ï¶ùÏÑú Ï†úÍ±∞
+    # ?ù∏Ï¶ùÏÑú ?†úÍ±?
     observeEvent(input$scremove, {
       file.remove("sc.httr-oauth")
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
@@ -234,9 +234,9 @@ RDMA <- function(){
     
     
     
-    # RDMA GSC Îç∞Ïù¥ÌÑ∞ Ï∂îÏ∂ú Ìï®Ïàò
+    # RDMA GSC ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú ?ï®?àò
     
-    # SC Îç∞Ïù¥ÌÑ∞ Ï∂îÏ∂ú
+    # SC ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú
     gsc_analytics.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
       gar_auth("sc.httr-oauth")
       tryCatch({
@@ -275,19 +275,19 @@ RDMA <- function(){
       
     }
     
-    # Îç∞Ïù¥ÌÑ∞ Ï∂îÏ∂ú Ïãú RowLimit Ï∏°Ï†ï Î∞©Î≤ï
+    # ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú ?ãú RowLimit Ï∏°Ï†ï Î∞©Î≤ï
     gsc_limit_analytics.func <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
       row_limit.num <- 5000
       
-      # Google SearchConsole APIÏóêÏÑú Ï∂îÏ∂úÌïòÍ≥†Ïûê ÌïòÎäî Îç∞Ïù¥ÌÑ∞Ïùò ÏñëÏù¥ ÏñºÎßàÏù∏ÏßÄ Ïù¥Ï†ÑÏóê Ï†úÍ≥µÌï¥Ï£ºÏßà ÏïäÏïÑ RowLimitÏùÑ Ï†ïÌôïÌûà ÌåêÎã® Ìï† Ïàò ÏóÜÎã§.
-      # Ìï¥Îãπ Í∏∞Í∞Ñ Î∞è ÏÑ§Ï†ïÏóê Îî∞Î•∏ Îç∞Ïù¥ÌÑ∞ÏñëÏóê Îî∞Îùº RowLimitÏùÑ Î≥ÄÍ≤ΩÏãúÏºúÏ£ºÏñ¥ÏïºÌïòÎäîÎç∞ Ï∂îÏ∂úÏùÑÌï¥Ïïº ÌôïÏù∏ Í∞ÄÎä•ÌïòÍ∏∞ ÎïåÎ¨∏Ïóê Ïù¥ÏôÄ Í∞ôÏù¥ Î£®ÌîÑÎ•º Ïã§ÌñâÌïúÎã§.
+      # Google SearchConsole API?óê?Ñú Ï∂îÏ∂ú?ïòÍ≥†Ïûê ?ïò?äî ?ç∞?ù¥?Ñ∞?ùò ?ñë?ù¥ ?ñºÎßàÏù∏ÏßÄ ?ù¥?†Ñ?óê ?†úÍ≥µÌï¥Ï£ºÏßà ?ïä?ïÑ RowLimit?ùÑ ?†ï?ôï?ûà ?åê?ã® ?ï† ?àò ?óÜ?ã§.
+      # ?ï¥?ãπ Í∏∞Í∞Ñ Î∞? ?Ñ§?†ï?óê ?î∞Î•? ?ç∞?ù¥?Ñ∞?ñë?óê ?î∞?ùº RowLimit?ùÑ Î≥ÄÍ≤ΩÏãúÏºúÏ£º?ñ¥?ïº?ïò?äî?ç∞ Ï∂îÏ∂ú?ùÑ?ï¥?ïº ?ôï?ù∏ Í∞Ä?ä•?ïòÍ∏? ?ïåÎ¨∏Ïóê ?ù¥??Ä Í∞ôÏù¥ Î£®ÌîÑÎ•? ?ã§?ñâ?ïú?ã§.
       repeat{
         temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
         cat(row_limit.num, " : ",nrow(temp), "\n")
         
-        # GSC Îç∞Ïù¥ÌÑ∞ Ï∂îÏ∂ú Ïãú ÏóêÎü¨Î∞úÏÉù ÌôïÏù∏ : Error Î∞úÏÉù Ïãú nrow ÏÇ¨Ïö©ÌïòÎ©¥ NullÍ∞í Ï∂úÎ†•
+        # GSC ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú ?ãú ?óê?ü¨Î∞úÏÉù ?ôï?ù∏ : Error Î∞úÏÉù ?ãú nrow ?Ç¨?ö©?ïòÎ©? NullÍ∞? Ï∂úÎ†•
         if(is.null(nrow(temp))){
-          # Ìï¥Îãπ Î¨∏Íµ¨Í∞Ä Ï∂úÎ†•ÎêòÎ©¥ RowlimitÏù¥ ÌãÄÎ¶¨Îã§Îäî Í≤ÉÏù¥Îã§. Ìï¥Îãπ Î¨∏Íµ¨ Ïù¥Ïô∏Ïóî RowlimitÍ≥º Í¥ÄÍ≥ÑÏóÜÎäî ÏóêÎü¨
+          # ?ï¥?ãπ Î¨∏Íµ¨Í∞Ä Ï∂úÎ†•?êòÎ©? Rowlimit?ù¥ ??ÄÎ¶¨Îã§?äî Í≤ÉÏù¥?ã§. ?ï¥?ãπ Î¨∏Íµ¨ ?ù¥?ô∏?óî RowlimitÍ≥? Í¥ÄÍ≥ÑÏóÜ?äî ?óê?ü¨
           if(grepl('numbers of columns of arguments do not match', temp)){
             row_limit.num <- row_limit.num - 5000
             temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
@@ -310,7 +310,7 @@ RDMA <- function(){
               return(temp)
             }
           } else {
-            # urlÏùÄ Ìï¥Îãπ urlÏù¥ÎÇò Í∑∏ Ïô∏Ïùò Í∞íÏù¥ NAÏù∏ Í≤ΩÏö∞Î°ú Í∑∏Í≤É ÎòêÌïú ÏóêÎü¨Ïóê Ìè¨Ìï® ÏãúÌÇ§ÎèÑÎ°ùÌïúÎã§.
+            # url??Ä ?ï¥?ãπ url?ù¥?Çò Í∑? ?ô∏?ùò Í∞íÏù¥ NA?ù∏ Í≤ΩÏö∞Î°? Í∑∏Í≤É ?òê?ïú ?óê?ü¨?óê ?è¨?ï® ?ãú?Ç§?èÑÎ°ùÌïú?ã§.
             if(is.na(temp$clicks)){
               sc_data.df$Error <- c(sc_data.df$Error, siteURL)
               temp <- NULL
@@ -322,7 +322,7 @@ RDMA <- function(){
       }
     }
     
-    # GSC ÏùºÎ≥Ñ Ï∂îÏ∂úÏù¥Î©∞ byBatch Í∏∞Ï§ÄÏúºÎ°ú ÏµúÎåÄÌïú ÎßéÏùÄ Îç∞Ïù¥ÌÑ∞ Ï∂îÏ∂ú
+    # GSC ?ùºÎ≥? Ï∂îÏ∂ú?ù¥Î©? byBatch Í∏∞Ï?Ä?úºÎ°? ÏµúÎ?Ä?ïú ÎßéÏ?Ä ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú
     daily_analytics.loop <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data, min_row.log){
       date_range.vec <- seq(as.Date(startDate), as.Date(endDate), "days")
       
@@ -359,7 +359,7 @@ RDMA <- function(){
     
     
     
-    # SC ÌïÑÌÑ∞ Ï∂îÍ∞Ä
+    # SC ?ïÑ?Ñ∞ Ï∂îÍ?Ä
     observeEvent(input$scfilteradd, {
       if(filter_btn$sc_btn < 5){
         filter_btn$sc_btn <- filter_btn$sc_btn + 1
@@ -373,7 +373,7 @@ RDMA <- function(){
           ui = variablesUI(btn)
         )
         # ========================================================================
-        # InputID ÌôïÏù∏Ïö©
+        # InputID ?ôï?ù∏?ö©
         # ------------------------------------------------------------------------
         # observe({
         #   outs <- outputOptions(output)
@@ -384,14 +384,14 @@ RDMA <- function(){
         # })
         # ========================================================================
         
-        # Dimension ÏàòÏ†ïÏóê Îî∞Î•∏ Operator Î≥ÄÍ≤Ω
+        # Dimension ?àò?†ï?óê ?î∞Î•? Operator Î≥ÄÍ≤?
         observeEvent(input[[NS(btn, "filterborder")]], {
           callModule(variablesServer_exp, btn, add_filter.func, input[[NS(btn, "filterborder")]])
         })
       }
     })
     
-    # SC ÌïÑÌÑ∞ Ï†úÍ±∞
+    # SC ?ïÑ?Ñ∞ ?†úÍ±?
     observeEvent(input$scfilterdelete, {
       if(filter_btn$sc_btn > 0){
         removeUI(
@@ -401,7 +401,7 @@ RDMA <- function(){
       }
     })
     
-    # Data ÌïÑÌÑ∞ Ï∂îÍ∞Ä
+    # Data ?ïÑ?Ñ∞ Ï∂îÍ?Ä
     observeEvent(input$dtfilteradd, {
       filter_btn$dt_btn <- filter_btn$dt_btn + 1
       data_btn <- filter_btn$dt_btn
@@ -419,7 +419,7 @@ RDMA <- function(){
       }
     })
     
-    # Data ÌïÑÌÑ∞ Ï†úÍ±∞
+    # Data ?ïÑ?Ñ∞ ?†úÍ±?
     observeEvent(input$dtfilterdelete, {
       if(filter_btn$dt_btn > 10){
         removeUI(
@@ -429,7 +429,7 @@ RDMA <- function(){
       }
     })
     
-    # Îç∞Ïù¥ÌÑ∞ Ï∂îÏ∂ú
+    # ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("Please wait...", buffer = TRUE))
@@ -491,7 +491,7 @@ RDMA <- function(){
       })
     })
     
-    # Îç∞Ïù¥ÌÑ∞ Ï†ÑÏ≤òÎ¶¨
+    # ?ç∞?ù¥?Ñ∞ ?†ÑÏ≤òÎ¶¨
     observeEvent(input$dfstart, {
       tryCatch({
         sc_data.df$sc.df <- eval(parse(text = paste0("subset(sc_data.df$sc.df, ",dtfilter.func(filter_btn$dt_btn), ")")))
@@ -500,14 +500,14 @@ RDMA <- function(){
       })
     })
     
-    # Îç∞Ïù¥ÌÑ∞ Ï§ëÎ≥µ Ï≤òÎ¶¨
+    # ?ç∞?ù¥?Ñ∞ Ï§ëÎ≥µ Ï≤òÎ¶¨
     observeEvent(input$dfunique, {
       groub.vec <- sc_data.df$colname[sc_data.df$colname %in% c("date", "country", "device", "page", "query", "countryName", "url")]
       sc_data.df$sc.df <- eval(parse(text = paste0("sc_data.df$sc.df %>% mutate(totalposition = clicks * impressions) %>% group_by(",
                                                    paste0(groub.vec, collapse = ", "), ") %>% summarise(clicks = sum(clicks), impressions = sum(impressions), ctr = clicks/impressions, position = sum(totalposition)/impressions)")))
     })
     
-    # Îç∞Ïù¥ÌÑ∞ Ï∂îÏ∂ú
+    # ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú
     output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
                                              content = function(file){write.xlsx(sc_data.df$sc.df, file, row.names = FALSE)})
     
