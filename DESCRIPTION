@@ -21,7 +21,8 @@ Imports: shiny,
     googleAnalyticsR,
     doParallel,
     foreach,
-    openxlsx
+    openxlsx,
+    DT
 Collate: 
     'RDMA.R'
     'module.R'
