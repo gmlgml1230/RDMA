@@ -481,7 +481,7 @@ RDMA <- function(){
           }
           removeModal()
           showModal(text_page("S&C Data Export Completed"))
-          output$scdata <- renderDataTable(sc_data.df$sc.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+          output$scdata <- DT::renderDataTable(sc_data.df$sc.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
           sc_data.df$colname <- names(sc_data.df$sc.df)
         }, error = function(e){
           print(e)
