@@ -4,6 +4,7 @@
 #' @import shiny
 #' @import miniUI
 #' @import dplyr
+#' @import DT
 #' @import shinyWidgets
 #' @import searchConsoleR
 #' @import googleAuthR
