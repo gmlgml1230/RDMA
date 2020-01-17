@@ -15,7 +15,6 @@
 RDMA <- function(){
   
   options(httr_oauth_cache=T)
-  # Shiny?—?„œ 5MB?˜ ? œ?•œ?„ ?ž¡?•„?†“??€ê±? 30MBë¡? ?Š˜ë¦? ê²?
   options(shiny.maxRequestSize = 30 * 1024 ^ 2)
   
   oauth_ck <- function(auth_file){
@@ -208,35 +207,22 @@ RDMA <- function(){
     filter_btn <- reactiveValues(sc_btn = 0,
                                  dt_btn = 10)
     
-    # ?¸ì¦?
     observeEvent(input$scRefresh, {
-      if(!file.exists("sc.httr-oauth")){
-        searchConsoleR::scr_auth("sc.httr-oauth")
+      # if(!file.exists("sc.httr-oauth")){
+        # searchConsoleR::scr_auth(token = "sc.httr-oauth")
+        searchConsoleR::scr_auth()
+        0
         website_url <- searchConsoleR::list_websites()$siteUrl
         updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
         updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
-      }
+      # }
     })
     
-    # ?¸ì¦ì„œ ? œê±?
     observeEvent(input$scremove, {
       file.remove("sc.httr-oauth")
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
-    
-    # observeEvent(input$test_button, {
-    #   output$InputID_View <- renderText({
-    #     c(dtfilter.func())
-    #   })
-    # })
-    
-    
-    
-    
-    
-    # RDMA GSC ?°?´?„° ì¶”ì¶œ ?•¨?ˆ˜
-    
-    # SC ?°?´?„° ì¶”ì¶œ
+
     gsc_analytics.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
       gar_auth("sc.httr-oauth")
       tryCatch({
