@@ -54,7 +54,11 @@ RDMA <- function(){
   })
 
   ui <- miniPage(
-    tags$script("(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-117525726-1', 'auto');ga('send', 'pageview')"),
+    tags$script("(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).
+                push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];
+                a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script',
+                '//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-117525726-1', 'auto');
+                ga('send', 'pageview')"),
     tags$style("
                @import url(//fonts.googleapis.com/css?family=Nanum+Gothic);
                * { font-family: 'Nanum Gothic', sans-serif;}
@@ -267,46 +271,46 @@ RDMA <- function(){
 
     }
 
-    gsc_limit_analytics.func <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
-      row_limit.num <- 5000
-
-       repeat{
-        temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
-        cat(row_limit.num, " : ",nrow(temp), "\n")
-
-        if(is.null(nrow(temp))){
-          if(grepl('numbers of columns of arguments do not match', temp)){
-            row_limit.num <- row_limit.num - 5000
-            temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
-            return(temp)
-          } else {
-            if(grepl('Invalid Credentials', temp)){
-              temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
-              return(temp)
-            } else {
-              sc_data.df$Error <- c(sc_data.df$Error, siteURL)
-              temp <- NULL
-              return(temp)
-            }
-          }
-        } else {
-          if(nrow(temp) != 1){
-            if(nrow(temp) >= row_limit.num & row_limit.num < 95000){
-              row_limit.num <- row_limit.num + 5000
-            } else {
-              return(temp)
-            }
-          } else {
-            if(is.na(temp$clicks)){
-              sc_data.df$Error <- c(sc_data.df$Error, siteURL)
-              temp <- NULL
-              return(temp)
-            }
-          }
-        }
-
-      }
-    }
+    # gsc_limit_analytics.func <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
+    #   row_limit.num <- 5000
+    #
+    #    repeat{
+    #     temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
+    #     cat(row_limit.num, " : ",nrow(temp), "\n")
+    #
+    #     if(is.null(nrow(temp))){
+    #       if(grepl('numbers of columns of arguments do not match', temp)){
+    #         row_limit.num <- row_limit.num - 5000
+    #         temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
+    #         return(temp)
+    #       } else {
+    #         if(grepl('Invalid Credentials', temp)){
+    #           temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
+    #           return(temp)
+    #         } else {
+    #           sc_data.df$Error <- c(sc_data.df$Error, siteURL)
+    #           temp <- NULL
+    #           return(temp)
+    #         }
+    #       }
+    #     } else {
+    #       if(nrow(temp) != 1){
+    #         if(nrow(temp) >= row_limit.num & row_limit.num < 95000){
+    #           row_limit.num <- row_limit.num + 5000
+    #         } else {
+    #           return(temp)
+    #         }
+    #       } else {
+    #         if(is.na(temp$clicks)){
+    #           sc_data.df$Error <- c(sc_data.df$Error, siteURL)
+    #           temp <- NULL
+    #           return(temp)
+    #         }
+    #       }
+    #     }
+    #
+    #   }
+    # }
 
     daily_analytics.loop <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data, min_row.log){
       date_range.vec <- seq(as.Date(startDate), as.Date(endDate), "days")
@@ -325,7 +329,7 @@ RDMA <- function(){
                walk_data = 'byBatch') %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
       } else {
         temp.func <- function(gsc_analytics.func, siteURL, daily.date, dimensions, dimensionFilterExp, walk_data){
-          gsc_limit_analytics.func(gsc_analytics.func, siteURL, daily.date, daily.date, dimensions, dimensionFilterExp, walk_data)
+          gsc_analytics_error.func(siteURL, daily.date, daily.date, dimensions, dimensionFilterExp, rowLimit = 300000, walk_data)
         }
 
         lapply(X = date_range.vec,
@@ -428,12 +432,12 @@ RDMA <- function(){
                                          walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
             } else {
               sc_data.df$sc.df <- lapply(X = input$scwebsite,
-                                         FUN = gsc_limit_analytics.func,
-                                         gsc_analytics.func = gsc_analytics.func,
+                                         FUN = gsc_analytics_error.func,
                                          startDate = input$scstartdate[1],
                                          endDate = input$scstartdate[2],
                                          dimensions = input$scdimension,
                                          dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
+                                         rowLimit = 300000,
                                          walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
             }
           } else {
