@@ -269,6 +269,8 @@ RDMA <- function(){
             sc_data.df$Error <- c(sc_data.df$Error, siteURL)
             temp <- NULL
             return(temp)
+          } else {
+            return(temp)
           }
         }
       } else {
