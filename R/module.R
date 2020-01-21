@@ -7,7 +7,7 @@
 
 variablesUI <- function(id, data_filter.log = TRUE){
   ns <- NS(id)
-  
+
   if(data_filter.log){
     tags$div(
       id = paste0("var", id),
@@ -62,7 +62,7 @@ variablesUI <- function(id, data_filter.log = TRUE){
 
 variablesServer <- function(input, output, session, filter.vec, data_filter.log = TRUE){
   ns = session$ns
-  
+
   output$filterborder <- renderUI({
     selectInput(
       inputId = ns("filterborder"),
@@ -70,7 +70,7 @@ variablesServer <- function(input, output, session, filter.vec, data_filter.log 
       choices = c("Choose" = "", filter.vec)
     )
   })
-  
+
   if(data_filter.log){
     output$operator <- renderUI({
       selectInput(inputId = ns("operator"), label = "Operator", choices = c("~~","==","!~","!="))
@@ -79,7 +79,7 @@ variablesServer <- function(input, output, session, filter.vec, data_filter.log 
     output$operator <- renderUI({
       selectInput(inputId = ns("operator"), label = "Operator", choices = c("~~","==","!~","!=",">=","<="))
     })
-    
+
     output$expression <- renderUI({
       textInput(inputId = ns("expression"),label = "Expression")
     })
@@ -88,20 +88,20 @@ variablesServer <- function(input, output, session, filter.vec, data_filter.log 
 
 variablesServer_exp <- function(input, output, session, add_filter.func, select_filter.chr){
   ns = session$ns
-  
+
   output$expression <- renderUI({
     add_filter.func(ns, select_filter.chr)
   })
-  
+
 }
 
 variablesServer_and_or <- function(input, output, session){
   ns = session$ns
-  
+
   output$and_or <- renderUI({
     selectInput(inputId = ns("and_or"), label = "", choices = c("AND", "OR"), selected = "AND")
   })
-  
+
 }
 
 
@@ -114,7 +114,6 @@ variablesServer_and_or <- function(input, output, session){
 # Module Function
 # ------------------------------------------------------------------------------
 
-# Dimension 선택 시 Expression 변경 함수
 add_filter.func <- function(ns,select.chr){
   tagList(
     if(select.chr == ""){
@@ -129,7 +128,7 @@ add_filter.func <- function(ns,select.chr){
       }
     }
   )
-  
+
 }
 
 # ==============================================================================
