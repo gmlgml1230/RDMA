@@ -4,7 +4,6 @@
 #' @import shiny
 #' @import miniUI
 #' @import dplyr
-#' @import DT
 #' @import shinyWidgets
 #' @import searchConsoleR
 #' @import googleAuthR
@@ -94,9 +93,6 @@ RDMA <- function(){
                          column(3,
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
-                       # InputID ?????????
-                       # verbatimTextOutput('InputID_View'),
-                       # actionButton(inputId = "test_button",label = "test"),
                        shinyWidgets::materialSwitch("scfilter", "SC Filter", status = "info"),
                        conditionalPanel(condition = "input.scfilter == true",
                                         wellPanel(
@@ -127,7 +123,7 @@ RDMA <- function(){
                        downloadButton("sc_data.xlsx", "Download")
                      ),
                      verbatimTextOutput("scfail"),
-                     DT::dataTableOutput("scdata")
+                     shiny::dataTableOutput("scdata")
                    )
       )
     )
@@ -212,23 +208,28 @@ RDMA <- function(){
                                  dt_btn = 10)
 
     observeEvent(input$scRefresh, {
-      # if(!file.exists("sc.httr-oauth")){
-        # searchConsoleR::scr_auth(token = "sc.httr-oauth")
-        searchConsoleR::scr_auth()
-        0
+      if(!identical(list.files('.secrets/'), character(0))){
+        options(gargle_oauth_cache = '.secrets')
+        gargle::gargle_oauth_cache()
+        scr_auth()
         website_url <- searchConsoleR::list_websites()$siteUrl
         updateSelectizeInput(session, "scwebsite", choices = website_url, options = list(maxOptions = length(website_url)))
         updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
-      # }
+      }
     })
 
     observeEvent(input$scremove, {
-      file.remove("sc.httr-oauth")
+      unlink('.secrets', recursive=TRUE)
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
     })
 
     gsc_analytics.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
-      gar_auth("sc.httr-oauth")
+
+      options(
+        gargle_oauth_cache = ".secrets",
+        gargle_oauth_email = TRUE
+      )
+
       tryCatch({
         search_analytics(siteURL = siteURL,
                          startDate = startDate,
@@ -265,19 +266,14 @@ RDMA <- function(){
 
     }
 
-    # ????????? 추출 ??? RowLimit 측정 방법
     gsc_limit_analytics.func <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
       row_limit.num <- 5000
 
-      # Google SearchConsole API?????? 추출???고자 ?????? ???????????? ?????? ???마인지 ????????? ???공해주질 ?????? RowLimit??? ????????? ?????? ??? ??? ??????.
-      # ?????? 기간 ??? ????????? ?????? ??????????????? ?????? RowLimit??? 변경시켜주??????????????? 추출????????? ?????? 가????????? ???문에 ?????? 같이 루프??? ????????????.
-      repeat{
+       repeat{
         temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
         cat(row_limit.num, " : ",nrow(temp), "\n")
 
-        # GSC ????????? 추출 ??? ??????발생 ?????? : Error 발생 ??? nrow ???????????? Null??? 출력
         if(is.null(nrow(temp))){
-          # ?????? 문구가 출력?????? Rowlimit??? ???리다??? 것이???. ?????? 문구 ????????? Rowlimit??? 관계없??? ??????
           if(grepl('numbers of columns of arguments do not match', temp)){
             row_limit.num <- row_limit.num - 5000
             temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
@@ -300,7 +296,6 @@ RDMA <- function(){
               return(temp)
             }
           } else {
-            # url??? ?????? url?????? ??? ?????? 값이 NA??? 경우??? 그것 ?????? ????????? ?????? ?????????록한???.
             if(is.na(temp$clicks)){
               sc_data.df$Error <- c(sc_data.df$Error, siteURL)
               temp <- NULL
@@ -312,7 +307,6 @@ RDMA <- function(){
       }
     }
 
-    # GSC ?????? 추출?????? byBatch �?????????? �??????? �???? ????????? 추출
     daily_analytics.loop <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data, min_row.log){
       date_range.vec <- seq(as.Date(startDate), as.Date(endDate), "days")
 
@@ -344,12 +338,6 @@ RDMA <- function(){
 
     }
 
-
-
-
-
-
-    # SC ?????? �????
     observeEvent(input$scfilteradd, {
       if(filter_btn$sc_btn < 5){
         filter_btn$sc_btn <- filter_btn$sc_btn + 1
@@ -374,14 +362,12 @@ RDMA <- function(){
         # })
         # ========================================================================
 
-        # Dimension ????????? ?????? Operator 변???
         observeEvent(input[[NS(btn, "filterborder")]], {
           callModule(variablesServer_exp, btn, add_filter.func, input[[NS(btn, "filterborder")]])
         })
       }
     })
 
-    # SC ?????? ??????
     observeEvent(input$scfilterdelete, {
       if(filter_btn$sc_btn > 0){
         removeUI(
@@ -391,7 +377,6 @@ RDMA <- function(){
       }
     })
 
-    # Data ?????? �????
     observeEvent(input$dtfilteradd, {
       filter_btn$dt_btn <- filter_btn$dt_btn + 1
       data_btn <- filter_btn$dt_btn
@@ -409,7 +394,6 @@ RDMA <- function(){
       }
     })
 
-    # Data ?????? ??????
     observeEvent(input$dtfilterdelete, {
       if(filter_btn$dt_btn > 10){
         removeUI(
@@ -419,11 +403,15 @@ RDMA <- function(){
       }
     })
 
-    # ????????? 추출
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("Please wait...", buffer = TRUE))
-        gar_auth("sc.httr-oauth")
+
+        options(
+          gargle_oauth_cache = ".secrets",
+          gargle_oauth_email = TRUE
+        )
+
         sc_data.df$Error <- NULL
         btn.num <- filter_btn$sc_btn
         tryCatch({
@@ -472,7 +460,7 @@ RDMA <- function(){
           }
           removeModal()
           showModal(text_page("S&C Data Export Completed"))
-          output$scdata <- DT::renderDataTable(sc_data.df$sc.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
+          output$scdata <- shiny::renderDataTable(sc_data.df$sc.df, options = list(lengthMenu = c(5, 10, 20), pageLength = 10))
           sc_data.df$colname <- names(sc_data.df$sc.df)
         }, error = function(e){
           print(e)
@@ -481,7 +469,6 @@ RDMA <- function(){
       })
     })
 
-    # ????????? ???처리
     observeEvent(input$dfstart, {
       tryCatch({
         sc_data.df$sc.df <- eval(parse(text = paste0("subset(sc_data.df$sc.df, ",dtfilter.func(filter_btn$dt_btn), ")")))
@@ -490,14 +477,12 @@ RDMA <- function(){
       })
     })
 
-    # ????????? 중복 처리
     observeEvent(input$dfunique, {
       groub.vec <- sc_data.df$colname[sc_data.df$colname %in% c("date", "country", "device", "page", "query", "countryName", "url")]
       sc_data.df$sc.df <- eval(parse(text = paste0("sc_data.df$sc.df %>% mutate(totalposition = clicks * impressions) %>% group_by(",
                                                    paste0(groub.vec, collapse = ", "), ") %>% summarise(clicks = sum(clicks), impressions = sum(impressions), ctr = clicks/impressions, position = sum(totalposition)/impressions)")))
     })
 
-    # ????????? 추출
     output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
                                              content = function(file){write.xlsx(sc_data.df$sc.df, file, row.names = FALSE)})
 
