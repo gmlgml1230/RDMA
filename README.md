@@ -3,13 +3,8 @@
 ## GSC RDMA Package Download
 
 ```
-- 기존 RDMA
 library(devtools)
 install_github('gmlgml1230/RDMA')
-
-- GSC RDMA
-library(devtools)
-install_github('gmlgml1230/RDMA', ref = 'gsc')
 ```
 
 - 기존의 RDMA에는 GSC가 업데이트되어 있지 않음
