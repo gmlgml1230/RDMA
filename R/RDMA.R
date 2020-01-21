@@ -246,7 +246,7 @@ RDMA <- function(){
                                  walk_data = walk_data) %>%
           mutate(url = siteURL)
 
-        if(names(data) %in% 'date'){
+        if(any(names(data) %in% 'date')){
           data <- data %>% filter(!is.na(date))
         }
 
