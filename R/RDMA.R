@@ -13,29 +13,29 @@
 #' @import openxlsx
 
 RDMA <- function(){
-  
-  options(httr_oauth_cache=T)
+
+  # options(httr_oauth_cache=T)
   options(shiny.maxRequestSize = 30 * 1024 ^ 2)
-  
+
   oauth_ck <- function(auth_file){
-    if(file.exists(auth_file)){
-      return("OK")
-    } else {
+    if(identical(list.files('.secrets/'), character(0))){
       return("NO")
+    } else {
+      return("OK")
     }
   }
-  
-  oauth_trycatch <- function(auth_file, exr){
-    if(file.exists(auth_file)){
+
+  oauth_trycatch <- function(exr){
+    if(!identical(list.files('.secrets/'), character(0))){
       tryCatch({
         exr
       },
       error = function(e){
-        file.remove(auth_file)
+        unlink('.secrets', recursive=TRUE)
       })
     }
   }
-  
+
   element_null_ck <- function(..., element_name, text_page, exr){
     null_ck <- vapply(list(...), is.null, TRUE)
     if(any(null_ck)){
@@ -44,12 +44,16 @@ RDMA <- function(){
       exr
     }
   }
-  
-  oauth_trycatch("sc.httr-oauth", {
-    gar_auth("sc.httr-oauth")
+
+  oauth_trycatch({
+    options(
+      gargle_oauth_cache = ".secrets",
+      gargle_oauth_email = TRUE
+    )
+
     website_url <- searchConsoleR::list_websites()$siteUrl
   })
-  
+
   ui <- miniPage(
     tags$script("(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', 'UA-117525726-1', 'auto');ga('send', 'pageview')"),
     tags$style("
@@ -58,11 +62,11 @@ RDMA <- function(){
                "
     ),
     gadgetTitleBar("Data Preparation Tool"),
-    
+
     miniTabstripPanel(
-      
+
       ##### Search Console -----------------------------------------------------------------------------------------------------------------
-      
+
       miniTabPanel(title = "Search Console",
                    miniContentPanel(
                      fluidRow(
@@ -90,7 +94,7 @@ RDMA <- function(){
                          column(3,
                                 selectInput(inputId = "scdimension", label = "Dimension", choices = c("date","country","device","page","query","searchAppearance"), multiple = T))
                        ),
-                       # InputID ?ôï?ù∏?ö©
+                       # InputID ?????????
                        # verbatimTextOutput('InputID_View'),
                        # actionButton(inputId = "test_button",label = "test"),
                        shinyWidgets::materialSwitch("scfilter", "SC Filter", status = "info"),
@@ -128,11 +132,11 @@ RDMA <- function(){
       )
     )
     )
-  
+
   server <- function(input, output, session) {
-    
+
     temp_err <- reactiveValues()
-    
+
     text_page <- function(text, buffer = FALSE, button = "OK"){
       if(buffer == FALSE){
         modalDialog(
@@ -144,9 +148,9 @@ RDMA <- function(){
       } else {
         modalDialog(text, easyClose = TRUE, footer = NULL)
       }
-      
+
     }
-    
+
     scfilter.func <- function(btn.num){
       vapply(X = 1:btn.num,
              FUN = function(x){
@@ -167,7 +171,7 @@ RDMA <- function(){
              },
              FUN.VALUE = character(1))
     }
-    
+
     dtfilter.func <- function(btn.num){
       vapply(X = 11:btn.num,
              FUN = function(x){
@@ -175,13 +179,13 @@ RDMA <- function(){
                operator.chr <- input[[NS(x, "operator")]]
                expression.chr <- input[[NS(x, "expression")]]
                and_or.chr <- input[[NS(x, "and_or")]]
-               
+
                if(is.null(and_or.chr)){
                  and_or.chr <- " "
                } else {
                  if(and_or.chr == "AND"){and_or.chr <- "&"} else {and_or.chr <- "|"}
                }
-               
+
                if(operator.chr == "~~"){
                  paste0(and_or.chr, " grepl('", expression.chr, "', ", dimension.chr, ") ")
                } else if(operator.chr == "=="){
@@ -198,15 +202,15 @@ RDMA <- function(){
              },
              FUN.VALUE = character(1)) %>% paste(., collapse = " ")
     }
-    
+
     ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
-    
+
     sc_data.df <- reactiveValues(sc.df = NULL,
                                  colname = NULL,
                                  Error = NULL)
     filter_btn <- reactiveValues(sc_btn = 0,
                                  dt_btn = 10)
-    
+
     observeEvent(input$scRefresh, {
       # if(!file.exists("sc.httr-oauth")){
         # searchConsoleR::scr_auth(token = "sc.httr-oauth")
@@ -217,7 +221,7 @@ RDMA <- function(){
         updateActionButton(session, inputId = "scRefresh", label = "Authorization : OK")
       # }
     })
-    
+
     observeEvent(input$scremove, {
       file.remove("sc.httr-oauth")
       updateActionButton(session, inputId = "scRefresh", label = "Authorization : NO")
@@ -232,15 +236,15 @@ RDMA <- function(){
                          dimensions = dimensions,
                          dimensionFilterExp = dimensionFilterExp,
                          rowLimit = rowLimit,
-                         walk_data = walk_data) %>% 
-          mutate(url = siteURL) %>% 
+                         walk_data = walk_data) %>%
+          mutate(url = siteURL) %>%
           filter(!is.na(date))
       },
       error = function(e){
         print(e)
       })
     }
-    
+
     gsc_analytics_error.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
       temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data)
       if(!is.null(nrow(temp))){
@@ -258,22 +262,22 @@ RDMA <- function(){
         temp <- NULL
         return(temp)
       }
-      
+
     }
-    
-    # ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú ?ãú RowLimit Ï∏°Ï†ï Î∞©Î≤ï
+
+    # ????????? Ï∂îÏ∂ú ??? RowLimit Ï∏°Ï†ï Î∞©Î≤ï
     gsc_limit_analytics.func <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data){
       row_limit.num <- 5000
-      
-      # Google SearchConsole API?óê?Ñú Ï∂îÏ∂ú?ïòÍ≥†Ïûê ?ïò?äî ?ç∞?ù¥?Ñ∞?ùò ?ñë?ù¥ ?ñºÎßàÏù∏ÏßÄ ?ù¥?†Ñ?óê ?†úÍ≥µÌï¥Ï£ºÏßà ?ïä?ïÑ RowLimit?ùÑ ?†ï?ôï?ûà ?åê?ã® ?ï† ?àò ?óÜ?ã§.
-      # ?ï¥?ãπ Í∏∞Í∞Ñ Î∞? ?Ñ§?†ï?óê ?î∞Î•? ?ç∞?ù¥?Ñ∞?ñë?óê ?î∞?ùº RowLimit?ùÑ Î≥ÄÍ≤ΩÏãúÏºúÏ£º?ñ¥?ïº?ïò?äî?ç∞ Ï∂îÏ∂ú?ùÑ?ï¥?ïº ?ôï?ù∏ Í∞Ä?ä•?ïòÍ∏? ?ïåÎ¨∏Ïóê ?ù¥??Ä Í∞ôÏù¥ Î£®ÌîÑÎ•? ?ã§?ñâ?ïú?ã§.
+
+      # Google SearchConsole API?????? Ï∂îÏ∂ú???Í≥†Ïûê ?????? ???????????? ?????? ???ÎßàÏù∏ÏßÄ ????????? ???Í≥µÌï¥Ï£ºÏßà ?????? RowLimit??? ????????? ?????? ??? ??? ??????.
+      # ?????? Í∏∞Í∞Ñ ??? ????????? ?????? ??????????????? ?????? RowLimit??? Î≥ÄÍ≤ΩÏãúÏºúÏ£º??????????????? Ï∂îÏ∂ú????????? ?????? Í∞Ä????????? ???Î¨∏Ïóê ?????? Í∞ôÏù¥ Î£®ÌîÑ??? ????????????.
       repeat{
         temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
         cat(row_limit.num, " : ",nrow(temp), "\n")
-        
-        # GSC ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú ?ãú ?óê?ü¨Î∞úÏÉù ?ôï?ù∏ : Error Î∞úÏÉù ?ãú nrow ?Ç¨?ö©?ïòÎ©? NullÍ∞? Ï∂úÎ†•
+
+        # GSC ????????? Ï∂îÏ∂ú ??? ??????Î∞úÏÉù ?????? : Error Î∞úÏÉù ??? nrow ???????????? Null??? Ï∂úÎ†•
         if(is.null(nrow(temp))){
-          # ?ï¥?ãπ Î¨∏Íµ¨Í∞Ä Ï∂úÎ†•?êòÎ©? Rowlimit?ù¥ ??ÄÎ¶¨Îã§?äî Í≤ÉÏù¥?ã§. ?ï¥?ãπ Î¨∏Íµ¨ ?ù¥?ô∏?óî RowlimitÍ≥? Í¥ÄÍ≥ÑÏóÜ?äî ?óê?ü¨
+          # ?????? Î¨∏Íµ¨Í∞Ä Ï∂úÎ†•?????? Rowlimit??? ???Î¶¨Îã§??? Í≤ÉÏù¥???. ?????? Î¨∏Íµ¨ ????????? Rowlimit??? Í¥ÄÍ≥ÑÏóÜ??? ??????
           if(grepl('numbers of columns of arguments do not match', temp)){
             row_limit.num <- row_limit.num - 5000
             temp <- gsc_analytics.func(siteURL, startDate, endDate, dimensions, dimensionFilterExp, row_limit.num, walk_data)
@@ -296,7 +300,7 @@ RDMA <- function(){
               return(temp)
             }
           } else {
-            # url??Ä ?ï¥?ãπ url?ù¥?Çò Í∑? ?ô∏?ùò Í∞íÏù¥ NA?ù∏ Í≤ΩÏö∞Î°? Í∑∏Í≤É ?òê?ïú ?óê?ü¨?óê ?è¨?ï® ?ãú?Ç§?èÑÎ°ùÌïú?ã§.
+            # url??? ?????? url?????? ??? ?????? Í∞íÏù¥ NA??? Í≤ΩÏö∞??? Í∑∏Í≤É ?????? ????????? ?????? ?????????Î°ùÌïú???.
             if(is.na(temp$clicks)){
               sc_data.df$Error <- c(sc_data.df$Error, siteURL)
               temp <- NULL
@@ -304,19 +308,19 @@ RDMA <- function(){
             }
           }
         }
-        
+
       }
     }
-    
-    # GSC ?ùºÎ≥? Ï∂îÏ∂ú?ù¥Î©? byBatch Í∏∞Ï?Ä?úºÎ°? ÏµúÎ?Ä?ïú ÎßéÏ?Ä ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú
+
+    # GSC ?????? Ï∂îÏ∂ú?????? byBatch Í∏?????????? Ïµ??????? Îß???? ????????? Ï∂îÏ∂ú
     daily_analytics.loop <- function(gsc_analytics.func, siteURL, startDate, endDate, dimensions, dimensionFilterExp, walk_data, min_row.log){
       date_range.vec <- seq(as.Date(startDate), as.Date(endDate), "days")
-      
+
       if(min_row.log){
         temp.func <- function(siteURL, daily.date, dimensions, dimensionFilterExp, rowLimit, walk_data){
           gsc_analytics_error.func(siteURL, daily.date, daily.date, dimensions, dimensionFilterExp, rowLimit, walk_data)
         }
-        
+
         lapply(X = date_range.vec,
                FUN = temp.func,
                siteURL = siteURL,
@@ -328,7 +332,7 @@ RDMA <- function(){
         temp.func <- function(gsc_analytics.func, siteURL, daily.date, dimensions, dimensionFilterExp, walk_data){
           gsc_limit_analytics.func(gsc_analytics.func, siteURL, daily.date, daily.date, dimensions, dimensionFilterExp, walk_data)
         }
-        
+
         lapply(X = date_range.vec,
                FUN = temp.func,
                gsc_analytics.func = gsc_analytics.func,
@@ -337,29 +341,29 @@ RDMA <- function(){
                dimensionFilterExp = dimensionFilterExp,
                walk_data = 'byBatch') %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
       }
-      
+
     }
-    
-    
-    
-    
-    
-    
-    # SC ?ïÑ?Ñ∞ Ï∂îÍ?Ä
+
+
+
+
+
+
+    # SC ?????? Ï∂????
     observeEvent(input$scfilteradd, {
       if(filter_btn$sc_btn < 5){
         filter_btn$sc_btn <- filter_btn$sc_btn + 1
         btn <- filter_btn$sc_btn
-        
+
         callModule(variablesServer, btn, c("country","device","page","query","searchAppearance"))
-        
+
         insertUI(
           selector = '#scfilter_place',
           where = "beforeEnd",
           ui = variablesUI(btn)
         )
         # ========================================================================
-        # InputID ?ôï?ù∏?ö©
+        # InputID ?????????
         # ------------------------------------------------------------------------
         # observe({
         #   outs <- outputOptions(output)
@@ -369,15 +373,15 @@ RDMA <- function(){
         #   output$InputID_View <- renderPrint({outs})
         # })
         # ========================================================================
-        
-        # Dimension ?àò?†ï?óê ?î∞Î•? Operator Î≥ÄÍ≤?
+
+        # Dimension ????????? ?????? Operator Î≥Ä???
         observeEvent(input[[NS(btn, "filterborder")]], {
           callModule(variablesServer_exp, btn, add_filter.func, input[[NS(btn, "filterborder")]])
         })
       }
     })
-    
-    # SC ?ïÑ?Ñ∞ ?†úÍ±?
+
+    # SC ?????? ??????
     observeEvent(input$scfilterdelete, {
       if(filter_btn$sc_btn > 0){
         removeUI(
@@ -386,26 +390,26 @@ RDMA <- function(){
         filter_btn$sc_btn <- filter_btn$sc_btn - 1
       }
     })
-    
-    # Data ?ïÑ?Ñ∞ Ï∂îÍ?Ä
+
+    # Data ?????? Ï∂????
     observeEvent(input$dtfilteradd, {
       filter_btn$dt_btn <- filter_btn$dt_btn + 1
       data_btn <- filter_btn$dt_btn
-      
+
       callModule(variablesServer, data_btn, sc_data.df$colname, FALSE)
-      
+
       insertUI(
         selector = '#datafilter_place',
         where = "beforeEnd",
         ui = variablesUI(data_btn, FALSE)
       )
-      
+
       if(data_btn >= 12){
         callModule(variablesServer_and_or, data_btn)
       }
     })
-    
-    # Data ?ïÑ?Ñ∞ ?†úÍ±?
+
+    # Data ?????? ??????
     observeEvent(input$dtfilterdelete, {
       if(filter_btn$dt_btn > 10){
         removeUI(
@@ -414,8 +418,8 @@ RDMA <- function(){
         filter_btn$dt_btn <- filter_btn$dt_btn - 1
       }
     })
-    
-    # ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú
+
+    # ????????? Ï∂îÏ∂ú
     observeEvent(input$scstart, {
       element_null_ck(input$scwebsite, input$scdimension, element_name = c("Web Site URL", "Dimension"), text_page = text_page, exr = {
         showModal(text_page("Please wait...", buffer = TRUE))
@@ -476,8 +480,8 @@ RDMA <- function(){
         if(!is.null(sc_data.df$Error)){output$scfail <- renderText({paste0("Fail URL \n",paste(unique(sc_data.df$Error), collapse = "\n"))})} else {output$scfail <- renderText({})}
       })
     })
-    
-    # ?ç∞?ù¥?Ñ∞ ?†ÑÏ≤òÎ¶¨
+
+    # ????????? ???Ï≤òÎ¶¨
     observeEvent(input$dfstart, {
       tryCatch({
         sc_data.df$sc.df <- eval(parse(text = paste0("subset(sc_data.df$sc.df, ",dtfilter.func(filter_btn$dt_btn), ")")))
@@ -485,21 +489,21 @@ RDMA <- function(){
         NULL
       })
     })
-    
-    # ?ç∞?ù¥?Ñ∞ Ï§ëÎ≥µ Ï≤òÎ¶¨
+
+    # ????????? Ï§ëÎ≥µ Ï≤òÎ¶¨
     observeEvent(input$dfunique, {
       groub.vec <- sc_data.df$colname[sc_data.df$colname %in% c("date", "country", "device", "page", "query", "countryName", "url")]
       sc_data.df$sc.df <- eval(parse(text = paste0("sc_data.df$sc.df %>% mutate(totalposition = clicks * impressions) %>% group_by(",
                                                    paste0(groub.vec, collapse = ", "), ") %>% summarise(clicks = sum(clicks), impressions = sum(impressions), ctr = clicks/impressions, position = sum(totalposition)/impressions)")))
     })
-    
-    # ?ç∞?ù¥?Ñ∞ Ï∂îÏ∂ú
+
+    # ????????? Ï∂îÏ∂ú
     output$`sc_data.xlsx` <- downloadHandler(filename = function(){''},
                                              content = function(file){write.xlsx(sc_data.df$sc.df, file, row.names = FALSE)})
-    
+
   }
-  
+
   viewer <- dialogViewer("RDMA", width = 1200, height = 800)
   shiny::runGadget(ui, server, viewer = viewer)
-  
+
 }
