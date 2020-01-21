@@ -7,9 +7,6 @@ library(devtools)
 install_github('gmlgml1230/RDMA')
 ```
 
-- 기존의 RDMA에는 GSC가 업데이트되어 있지 않음
-- GSC RDMA에는 Adwords, Omniture, Analytics를 제외 후 GSC만 있음
-
 ## Update List
 
 1. Adwords, Omniture, Google Analytics Tap 제거
