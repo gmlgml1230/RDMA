@@ -237,15 +237,21 @@ RDMA <- function(){
       )
 
       tryCatch({
-        search_analytics(siteURL = siteURL,
-                         startDate = startDate,
-                         endDate = endDate,
-                         dimensions = dimensions,
-                         dimensionFilterExp = dimensionFilterExp,
-                         rowLimit = rowLimit,
-                         walk_data = walk_data) %>%
-          mutate(url = siteURL) %>%
-          filter(!is.na(date))
+        data <- search_analytics(siteURL = siteURL,
+                                 startDate = startDate,
+                                 endDate = endDate,
+                                 dimensions = dimensions,
+                                 dimensionFilterExp = dimensionFilterExp,
+                                 rowLimit = rowLimit,
+                                 walk_data = walk_data) %>%
+          mutate(url = siteURL)
+
+        if(names(data) %in% 'date'){
+          data <- data %>% filter(!is.na(date))
+        }
+
+        return(data)
+
       },
       error = function(e){
         print(e)
@@ -432,7 +438,6 @@ RDMA <- function(){
                                          dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
                                          rowLimit = 5000,
                                          walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
-              print(sc_data.df$sc.df)
             } else {
               sc_data.df$sc.df <- lapply(X = input$scwebsite,
                                          FUN = gsc_analytics_error.func,
