@@ -432,6 +432,7 @@ RDMA <- function(){
                                          dimensionFilterExp = if(input$scfilter && btn.num != 0){scfilter.func(btn.num)} else {NULL},
                                          rowLimit = 5000,
                                          walk_data = "byBatch") %>% do.call(., what = rbind) %>% replace(is.na(.), 0)
+              print(sc_data.df$sc.df)
             } else {
               sc_data.df$sc.df <- lapply(X = input$scwebsite,
                                          FUN = gsc_analytics_error.func,
