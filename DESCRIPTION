@@ -3,11 +3,11 @@ Title: Easy to use Adwords Package and Omniture Package in R
 Version: 0.1.0
 Authors@R: person("HeeSoo", "Jang", email = "gmlgml1230@naver.com", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
-Depends: R (>= 3.4.2)
+Depends: R (>= 3.4.1)
 License: What license is it under?
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 7.0.2
 Imports: shiny,
     miniUI,
     dplyr,
@@ -21,4 +21,9 @@ Imports: shiny,
     googleAnalyticsR,
     doParallel,
     foreach,
-    openxlsx
+    openxlsx,
+    gargle,
+    DT (>= 0.11)
+Collate: 
+    'RDMA.R'
+    'module.R'
