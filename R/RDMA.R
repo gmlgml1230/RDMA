@@ -174,28 +174,6 @@ RDMA <- function(){
              FUN.VALUE = character(1))
     }
 
-<<<<<<< HEAD
-    sc_data.df <- reactiveValues()
-    sc_filter_add <- reactiveValues(filter = 0)
-    dt_filter_add <- reactiveValues(filter = 0)
-
-    my_search_analytics <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
-      temp_df <- tryCatch({
-        search_analytics(siteURL = siteURL,
-                         startDate = startDate,
-                         endDate = endDate,
-                         dimensions = dimensions,
-                         dimensionFilterExp = dimensionFilterExp,
-                         rowLimit = rowLimit,
-                         walk_data = walk_data) %>% 
-          mutate(url = siteURL) %>% 
-          filter(!is.na(date))
-      },
-      error = function(e){
-        temp_err <<- c(temp_err, siteURL)
-        NULL
-      })
-=======
     dtfilter.func <- function(btn.num){
       vapply(X = 11:btn.num,
              FUN = function(x){
@@ -225,7 +203,6 @@ RDMA <- function(){
                }
              },
              FUN.VALUE = character(1)) %>% paste(., collapse = " ")
->>>>>>> develop
     }
 
     ##### Search Console TAP -------------------------------------------------------------------------------------------------------------
