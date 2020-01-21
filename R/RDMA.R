@@ -16,7 +16,7 @@ RDMA <- function(){
   # options(httr_oauth_cache=T)
   options(shiny.maxRequestSize = 30 * 1024 ^ 2)
 
-  oauth_ck <- function(auth_file){
+  oauth_ck <- function(){
     if(identical(list.files('.secrets/'), character(0))){
       return("NO")
     } else {
@@ -70,7 +70,7 @@ RDMA <- function(){
                    miniContentPanel(
                      fluidRow(
                        column(10,
-                              actionButton(inputId = "scRefresh", label = paste0("Authorization : ", oauth_ck("sc.httr-oauth"))),
+                              actionButton(inputId = "scRefresh", label = paste0("Authorization : ", oauth_ck())),
                               actionButton(inputId = "scremove", label = "Remove Auth")
                        )
                      ),
@@ -208,7 +208,7 @@ RDMA <- function(){
                                  dt_btn = 10)
 
     observeEvent(input$scRefresh, {
-      if(!identical(list.files('.secrets/'), character(0))){
+      if(identical(list.files('.secrets/'), character(0))){
         options(gargle_oauth_cache = '.secrets')
         gargle::gargle_oauth_cache()
         scr_auth()
@@ -244,6 +244,7 @@ RDMA <- function(){
       error = function(e){
         print(e)
       })
+
     }
 
     gsc_analytics_error.func <- function(siteURL, startDate, endDate, dimensions, dimensionFilterExp, rowLimit, walk_data){
