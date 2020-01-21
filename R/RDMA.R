@@ -129,7 +129,7 @@ RDMA <- function(){
                        downloadButton("sc_data.xlsx", "Download")
                      ),
                      verbatimTextOutput("scfail"),
-                     shiny::dataTableOutput("scdata")
+                     DT::dataTableOutput("scdata")
                    )
       )
     )
