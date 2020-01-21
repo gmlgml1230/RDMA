@@ -22,7 +22,8 @@ Imports: shiny,
     doParallel,
     foreach,
     openxlsx,
-    gargle
+    gargle,
+    DT (>= 0.11)
 Collate: 
     'RDMA.R'
     'module.R'
