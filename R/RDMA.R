@@ -237,6 +237,7 @@ RDMA <- function(){
       )
 
       tryCatch({
+        Sys.sleep(0.5)
         data <- search_analytics(siteURL = siteURL,
                                  startDate = startDate,
                                  endDate = endDate,
